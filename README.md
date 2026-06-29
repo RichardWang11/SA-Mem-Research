@@ -181,3 +181,52 @@ Useful evaluation options:
 - `--sample-size`: evaluate only the first N samples.
 - `--eval-output`: custom detailed evaluation output path.
 - `--summary-output`: custom summary output path.
+
+## LoCoMo B/B+TF Reproduction Notes
+
+This branch adds a lightweight reproduction record for the non-graph LoCoMo B/B+TF path. It includes aggregate metrics, reusable scripts, and retrieval instrumentation, while leaving full raw `out/` artifacts outside the repository.
+
+Detailed files:
+
+- `docs/locomo_b_btf_reproduction.md`: full reproduction notes and paper comparison.
+- `docs/locomo_b_btf_metrics_summary.md`: human-readable aggregate metrics.
+- `docs/locomo_b_btf_metrics_summary.json`: machine-readable aggregate metrics.
+- `scripts/run_locomo_b_btf.sh`: end-to-end runner.
+- `scripts/retrieve_locomo_b_btf.py`: retrieval wrapper exposing top-k and method selection.
+- `scripts/analyze_repro_metrics.py`: metric and latency summarizer.
+
+### Scope
+
+| Item | Setting |
+|------|---------|
+| Dataset | LoCoMo10, 10 conversations |
+| QA samples | 1540 non-category-5 QA pairs |
+| Methods | B and B+TF |
+| Graph retrieval | Disabled |
+| Retrieval top-k | 5 |
+| Generation answer top-n | 5 |
+| Generation context | `content` text mode |
+| LLM | `gpt-4o-mini` |
+| Embedding model | `text-embedding-3-small` |
+
+### Key Results
+
+| Method | F1 | BLEU | Hit@5 | Recall@5 | Complete-MRR | Core Search Mean |
+|--------|----|------|-------|----------|--------------|------------------|
+| B | 0.5133 | 0.3892 | 0.8201 | 0.7580 | 0.5608 | 0.1024s |
+| B+TF | 0.4879 | 0.3692 | 0.7708 | 0.7065 | 0.5114 | 0.1037s |
+
+The B baseline is close to the paper on LoCoMo QA, top-5 evidence metrics, and warm/core retrieval latency. The current public enhanced retrieval path does not reproduce a B+TF gain over B in this run.
+
+For category-2 POINT/RANGE-triggered questions (n=40), temporal filtering does reduce the paper-like core-search boundary:
+
+| Method | Core Mean | Core p50 | Core p95 | Initial Pool Mean | Filtered Pool Mean |
+|--------|-----------|----------|----------|-------------------|--------------------|
+| B | 0.1060s | 0.1053s | 0.1449s | 96.00 | 96.00 |
+| B+TF | 0.0429s | 0.0085s | 0.1362s | 96.00 | 33.65 |
+
+On all queries, this local latency gain is diluted because most category-2 questions are parsed as `NONE`, and online B+TF latency includes rewritten-query embedding plus cache flush. The report separates online wall time from the paper-like core-search timing boundary.
+
+### Notes
+
+The public code uses `QueryParser.rewritten_query` for enhanced retrieval. The paper mentions rewriting but does not provide the exact prompt or an isolated ablation that separates rewriting from temporal filtering. The reported B+TF numbers should therefore be read as the behavior of the public enhanced path with rewritten-query embeddings enabled. A useful follow-up is a `B+TF-original-query` ablation that keeps temporal candidate pruning but ranks with the original question embedding.

@@ -31,6 +31,7 @@ class SimpleRetriever:
         graph_limit: int | None = None,
         graph_hops: int | None = None,
         graph_include_relations: bool | None = None,
+        graph_person_relations: bool | None = None,
     ):
         mx = _mx()
         self.worker = worker
@@ -40,7 +41,7 @@ class SimpleRetriever:
         self.trace_map: Dict[Any, Dict[int, List[int]]] = {}
 
         # Graph params are accepted for API compatibility but unused in locomo baseline.
-        _ = (graph_expand, graph_min_score, graph_limit, graph_hops, graph_include_relations)
+        _ = (graph_expand, graph_min_score, graph_limit, graph_hops, graph_include_relations, graph_person_relations)
 
     def load(self):
         mx = _mx()
@@ -116,15 +117,28 @@ class SimpleRetriever:
             return {}
         return trace_map
 
-    def _score_and_rank(self, user_id: Any, qa: Dict[str, Any]):
+    def _score_and_rank(self, user_id: Any, qa: Dict[str, Any], store: Any = None):
         mx = _mx()
+        import time
         pool = [b for b in self.all_boxes if b.get("user_id") == user_id]
         q = qa.get("question", "") or ""
         q_id = qa.get("id", qa.get("question", ""))
 
-        store = mx.EmbeddingStore(self.worker, user_id)
-        qvec = store.get_vector(f"qa_{user_id}_{q_id}", "question", q, note=f"U{user_id}_QA_Content")
+        t_rank_start = time.perf_counter()
 
+        # Use provided store or create new one
+        t_store_init = 0.0
+        if store is None:
+            t_store_init_start = time.perf_counter()
+            store = mx.EmbeddingStore(self.worker, user_id)
+            t_store_init = time.perf_counter() - t_store_init_start
+
+        t_query_vec_start = time.perf_counter()
+        qvec = store.get_vector(f"qa_{user_id}_{q_id}", "question", q, note=f"U{user_id}_QA_Content")
+        t_query_vec = time.perf_counter() - t_query_vec_start
+
+        t_block_vec = 0.0
+        t_cosine = 0.0
         sim_map: Dict[int, float] = {}
         for b in pool:
             bid = mx._get_block_id(b)
@@ -143,26 +157,59 @@ class SimpleRetriever:
             # Combine all for retrieval ranking (Membox style)
             text = f"{content_text} {evt} {topic_kw}".strip()
 
+            t_bv_start = time.perf_counter()
             v = store.get_vector(
                 key,
                 "content_event_topic_kw",
                 text,
                 note=f"U{user_id}_B{bid}_content_event_topic_kw",
             )
+            t_block_vec += time.perf_counter() - t_bv_start
+
+            t_cosine_start = time.perf_counter()
             try:
                 s = cosine_similarity([qvec], [v])[0][0] if v else -1.0
             except Exception:
                 s = -1.0
+            t_cosine += time.perf_counter() - t_cosine_start
+
             sim_map[bid] = float(s)
 
+        t_sort_start = time.perf_counter()
         ranked = [bid for bid, _ in sorted(sim_map.items(), key=lambda x: x[1], reverse=True)]
+        t_sort = time.perf_counter() - t_sort_start
 
         # Keep full ordering for downstream reuse; top-k slice is optional
         rankings = {"content_event_topic_kw": ranked}
 
+        t_flush_start = time.perf_counter()
         store.flush()
+        t_flush = time.perf_counter() - t_flush_start
+
         target_boxes = mx.evidence_to_targets(qa.get("evidence"), pool)
-        return rankings, sim_map, target_boxes
+
+        t_rank = time.perf_counter() - t_rank_start
+        latency_meta = {
+            "retrieval_latency_parse": 0.0,
+            "retrieval_latency_filter": 0.0,
+            "retrieval_latency_store_init": t_store_init,
+            "retrieval_latency_query_vector": t_query_vec,
+            "retrieval_latency_block_vector_fetch": t_block_vec,
+            "retrieval_latency_cosine": t_cosine,
+            "retrieval_latency_sort": t_sort,
+            "retrieval_latency_flush": t_flush,
+            "retrieval_latency_rank_total": t_rank,
+            "retrieval_latency_search_no_parse": t_rank,
+            "retrieval_latency_total_with_parse": t_rank,
+            "fallback_to_full_pool": False,
+            "filtered_pool_size": len(pool),
+            "initial_pool_size": len(pool),
+            "parse_source": "NONE",
+            "query_intent": "NONE",
+            "time_axis": "NONE",
+        }
+
+        return rankings, sim_map, target_boxes, latency_meta
 
     def run(self, result_jsonl: str, result_csv: str):
         mx = _mx()
@@ -190,7 +237,9 @@ class SimpleRetriever:
             )
 
         with open(mx.Config.RAW_DATA_FILE, "r", encoding="utf-8") as f:
-            raw_list = json.load(f)[: mx.Config.LIMIT_CONVERSATIONS]
+            all_data = json.load(f)
+            limit = mx.Config.LIMIT_CONVERSATIONS
+            raw_list = all_data if (limit is None or limit <= 0) else all_data[:limit]
 
         # global_qa_idx = 0
 
@@ -198,6 +247,9 @@ class SimpleRetriever:
            
             user_id = str(conv_idx)  # Convert to string to match reindexed file format
             mx.logger.info(f"ℹ️ Assigned user_id={user_id} for conversation {conv_idx}")
+
+            # Create EmbeddingStore once per user for warm-cache
+            store = mx.EmbeddingStore(self.worker, user_id)
 
             qa_count_in_conv = 0
 
@@ -207,7 +259,7 @@ class SimpleRetriever:
 
                 qa_count_in_conv += 1
 
-                rankings, _, target_boxes = self._score_and_rank(user_id, qa)
+                rankings, _, target_boxes, latency_meta = self._score_and_rank(user_id, qa, store=store)
 
                 writer.writerow(
                     [
@@ -228,7 +280,11 @@ class SimpleRetriever:
                     "rankings": rankings,
                     "target_boxes": target_boxes,
                 }
+                res_entry.update(latency_meta)
                 mx.TraceLogger.log(result_jsonl, res_entry)
+
+            # Flush store once per user (not per QA)
+            store.flush()
 
             mx.logger.info(
                 "✅ Simple retrieval done for user %s (conversation %d: qa_idx %d-%d, %d queries)",
