@@ -430,6 +430,24 @@ class Config:
     TOPIC_CLASSIFY_MAX_RETRIES = 4
     EVENT_LABEL_TOP_K = 3
     LOCOMO_SESSION_PREFIX = False
+    GRAPH_EXTRACT_SOURCE = "event"
+
+    BUILD_TRACE_FILE = os.path.join(OUTPUT_DIR, "trace_build_process.jsonl")
+    TIME_TRACE_FILE = os.path.join(OUTPUT_DIR, "time_traces.jsonl")
+    TRACE_PROMPT_LOG_FILE = os.path.join(OUTPUT_DIR, "trace_prompts.jsonl")
+    TRACE_METRICS = ["temporal"]
+
+    OLLAMA_NUM_CTX = int(os.environ.get("OLLAMA_NUM_CTX", "0") or 0)
+    OLLAMA_NUM_PREDICT = int(os.environ.get("OLLAMA_NUM_PREDICT", "0") or 0)
+
+    USE_GRAPH_CONTEXT = False
+    GRAPH_CONTEXT_EVENTS_ONLY = False
+    GRAPH_CONTEXT_RELATIONS_ONLY = False
+    GRAPH_CONTEXT_EXPANDED_TOPK = None
+    GRAPH_CONTEXT_EXPANDED_MIN_SCORE = None
+    GRAPH_CONTEXT_PERSON_PROFILE = False
+    GRAPH_CONTEXT_STYLE = "default"
+    GRAPH_CONTEXT_CATEGORIES = None
 
     # Event classification control
     # Set to False to skip Pass 2 LLM call (PROMPT_DIALOG_CLASSIFICATION) and use heuristic fallback
@@ -502,6 +520,9 @@ class Config:
         cls.GENERATION_RESULT_FILE = os.path.join(cls.OUTPUT_DIR, "generation_results.jsonl")
         cls.GENERATION_REPORT_CSV = os.path.join(cls.OUTPUT_DIR, "report_generation_qa.csv")
         cls.TOKEN_LOG_FILE = os.path.join(cls.OUTPUT_DIR, "token_stream.jsonl")
+        cls.BUILD_TRACE_FILE = os.path.join(cls.OUTPUT_DIR, "trace_build_process.jsonl")
+        cls.TIME_TRACE_FILE = os.path.join(cls.OUTPUT_DIR, "time_traces.jsonl")
+        cls.TRACE_PROMPT_LOG_FILE = os.path.join(cls.OUTPUT_DIR, "trace_prompts.jsonl")
         cls.BUILD_STATS_FILE = os.path.join(cls.OUTPUT_DIR, "build_stats.jsonl")
         cls.GEN_SUMMARY_FILE = os.path.join(cls.OUTPUT_DIR, "generation_metrics_summary.jsonl")
         cls.BUILD_CHECKPOINT_FILE = os.path.join(cls.OUTPUT_DIR, "build_checkpoint.json")
@@ -1357,6 +1378,20 @@ def _write_boxes_jsonl(path: str, boxes: List[Dict[str, Any]]):
             f.write(json.dumps(b, ensure_ascii=False) + "\n")
 
 
+
+
+class TraceLinker:
+    """Compatibility placeholder for runs that do not request trace context."""
+
+    def __init__(self, worker: Any, trace_metrics: List[str] | None = None):
+        self.worker = worker
+        self.trace_metrics = trace_metrics or []
+
+    def run(self):
+        os.makedirs(os.path.dirname(Config.TIME_TRACE_FILE), exist_ok=True)
+        if not os.path.exists(Config.TIME_TRACE_FILE):
+            open(Config.TIME_TRACE_FILE, "w", encoding="utf-8").close()
+        logger.info("TraceLinker compatibility stub wrote empty trace file: %s", Config.TIME_TRACE_FILE)
 
 
 from retrieval.retrieval_impl import SimpleRetriever

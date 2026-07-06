@@ -3,7 +3,7 @@
 
 import json
 import os
-import sys
+import argparse
 from pathlib import Path
 from collections import Counter
 
@@ -343,7 +343,17 @@ def compute_evidence_metrics(retrieval_path, top_k=5, filter_time_constraint=Non
 
 
 def main():
-    out_dir = sys.argv[1] if len(sys.argv) > 1 else "out/locomo_b_btf_fix_latency_20260623"
+    parser = argparse.ArgumentParser(
+        description="Analyze QA, evidence, and latency metrics for a LoCoMo B/B+TF run."
+    )
+    parser.add_argument(
+        "out_dir",
+        nargs="?",
+        default="out/locomo_b_btf",
+        help="Output directory containing retrieval/generation/evaluation files.",
+    )
+    args = parser.parse_args()
+    out_dir = args.out_dir
     
     print(f"Analyzing metrics from: {out_dir}")
     print("=" * 60)

@@ -1,11 +1,24 @@
 # SA-Mem-Research
 
-Code for VLDB Research Track. This README currently only documents the LoCoMo running scripts.
+Code for VLDB Research Track. This branch also includes a lightweight, non-graph
+LoCoMo B/B+TF reproduction package.
 
 Run all commands from the project root:
 
 ```bash
 cd /data/wjl/SA-Mem-Research
+```
+
+## Environment
+
+Create a Python 3.10 environment and install the LoCoMo reproduction
+dependencies:
+
+```bash
+conda create -n samem-locomo python=3.10 -y
+conda activate samem-locomo
+pip install -r requirements-locomo.txt
+python -m nltk.downloader punkt punkt_tab
 ```
 
 Set API configuration by environment variables or CLI flags:
@@ -15,13 +28,81 @@ export OPENAI_API_KEY="YOUR_KEY"
 export OPENAI_BASE_URL="YOUR_OPENAI_COMPATIBLE_BASE_URL"  # optional
 ```
 
+Place LoCoMo10 at `dataset/locomo10.json`, or set `DATA_FILE` to another path
+when running the scripts below.
+
+## Quick LoCoMo B/B+TF Reproduction
+
+This is the recommended entrypoint for reproducing the non-graph B/B+TF run.
+It uses `gpt-4o-mini`, `text-embedding-3-small`, retrieval top-k `5`,
+generation answer top-n `5`, and `content` context by default.
+
+Run a one-conversation smoke test first:
+
+```bash
+LIMIT_CONVERSATIONS=1 \
+RUN_ID=locomo_b_btf_smoke \
+DATA_FILE=dataset/locomo10.json \
+bash scripts/run_locomo_b_btf.sh
+```
+
+Run the full LoCoMo10 B/B+TF reproduction:
+
+```bash
+RUN_ID=locomo_b_btf \
+DATA_FILE=dataset/locomo10.json \
+bash scripts/run_locomo_b_btf.sh
+```
+
+If memory blocks already exist under `out/<RUN_ID>/final_boxes_content.jsonl`,
+skip the build stage:
+
+```bash
+SKIP_BUILD=1 \
+RUN_ID=locomo_b_btf \
+DATA_FILE=dataset/locomo10.json \
+bash scripts/run_locomo_b_btf.sh
+```
+
+Summarize QA, evidence, and latency metrics after a run:
+
+```bash
+python scripts/analyze_repro_metrics.py out/locomo_b_btf
+```
+
+The generated summaries are written to:
+
+```text
+out/locomo_b_btf/metrics_summary.md
+out/locomo_b_btf/metrics_summary.json
+```
+
+### Non-Graph Compatibility
+
+This reproduction disables graph build/retrieval. The upstream
+`build_impl_graph.py` imports graph helpers at module load time, so this branch
+includes minimal non-graph compatibility shims:
+
+```text
+graph_entities_extractor.py
+graph_storage.py
+```
+
+They are only import shims for B/B+TF. They are not a graph implementation.
+Replace them with the full graph modules before running graph, B+HTM, or HTM
+experiments.
+
+## Manual LoCoMo Stages
+
 If memory blocks have not been built yet, run:
 
 ```bash
 python build_stage_locomo.py \
+  --stage build \
   --raw-data-file /path/to/locomo.json \
   --run-id locomo \
-  --limit-conversations -1
+  --limit-conversations -1 \
+  --disable-graph
 ```
 
 The following stages assume the build output is under `out/locomo/`.
@@ -194,6 +275,8 @@ Detailed files:
 - `scripts/run_locomo_b_btf.sh`: end-to-end runner.
 - `scripts/retrieve_locomo_b_btf.py`: retrieval wrapper exposing top-k and method selection.
 - `scripts/analyze_repro_metrics.py`: metric and latency summarizer.
+- `requirements-locomo.txt`: minimal Python dependencies for this reproduction path.
+- `graph_entities_extractor.py` and `graph_storage.py`: non-graph import shims.
 
 ### Scope
 

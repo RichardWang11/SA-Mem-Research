@@ -183,8 +183,13 @@ On category-2 POINT/RANGE-triggered queries (n=40), B+TF shows the expected loca
 | `scripts/run_locomo_b_btf.sh` | End-to-end runner |
 | `scripts/retrieve_locomo_b_btf.py` | Retrieval wrapper exposing top-k |
 | `scripts/analyze_repro_metrics.py` | Metrics and latency analyzer |
+| `requirements-locomo.txt` | Minimal dependencies for the LoCoMo B/B+TF reproduction path |
+| `graph_entities_extractor.py` | Non-graph import shim required by `build_impl_graph.py` |
+| `graph_storage.py` | Non-graph import shim required by `build_impl_graph.py` |
 
 The runner and analyzer scripts are included in this branch so the aggregate metrics can be regenerated from raw outputs.
+
+The graph shim files are only for non-graph B/B+TF import compatibility. They should be replaced with the author's full graph implementation before running graph, B+HTM, or HTM experiments.
 
 ## Files Intentionally Not Submitted
 
