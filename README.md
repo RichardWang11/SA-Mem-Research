@@ -1,6 +1,6 @@
 # SA-Mem-Research
 
-Code for VLDB Research Track. This README currently only documents the LoCoMo running scripts.
+Code for AAAI Research Track. This README currently only documents the LoCoMo running scripts.
 
 Run all commands from the project root:
 
