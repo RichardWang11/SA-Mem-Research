@@ -1,0 +1,14 @@
+{
+  "queries_scanned": 321,
+  "queries_with_parser_range": 269,
+  "time_matched_outside_dense20_query_leaf_pairs": 168,
+  "query_count": 48,
+  "projected_within_temporal_top20_pairs": 155,
+  "main_query_count": 36,
+  "adversarial_query_count": 12,
+  "new_confirmed_support_recovery_cases_in_this_pass": 0,
+  "previous_confirmed_support_candidate": "conv-48_105",
+  "previous_strict_gold_dense_miss": "conv-26_11",
+  "screening": "Query-time range filter over existing graph, Episode-to-leaf verified by name and original content; candidate generation is not semantic evidence validation.",
+  "limits": "No semantic Judge, no QA rerun, incomplete original memory preserved. Time-match is the existing edge timestamp, not independent event-time ground truth."
+}

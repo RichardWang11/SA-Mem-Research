@@ -1,0 +1,42 @@
+{
+  "qid": "conv-48_105",
+  "full_existing_tree_size": 38,
+  "full_existing_dense_order_unique": 38,
+  "query_ranges": [
+    {
+      "start": "2023-02-01T00:00:00+00:00",
+      "end": "2023-02-28T23:59:59.999999+00:00",
+      "phrase": "4 February, 2023",
+      "granularity": "month"
+    }
+  ],
+  "official_gold_dia_ids": [
+    "D4:3"
+  ],
+  "additional_support_dia_ids": [
+    "D4:5",
+    "D4:6"
+  ],
+  "additional_support_leaf": "leaf_34",
+  "original_dense_rank": 31,
+  "in_baseline_final_context": false,
+  "temporal_candidates_after_content_verified_mapping": [
+    "leaf_32",
+    "leaf_26",
+    "leaf_25",
+    "leaf_35",
+    "leaf_30",
+    "leaf_34"
+  ],
+  "temporal_filtered_rank": 6,
+  "mapping_mismatch_count_among_existing_leafs": 0,
+  "status": "additional_direct_answer_evidence_recoverable_in_offline_rank_projection",
+  "not_established": [
+    "Official-Gold-ID Dense Miss: annotated D4:3 was already recalled.",
+    "QA rescue: baseline has partial answer and no semantic Judge label yet.",
+    "Complete-memory H1 prevalence: the run memory is incomplete.",
+    "Event time accuracy: query was parsed to whole February; last-week event is not independently dated."
+  ],
+  "method": "Filter complete existing semantic order using time-matched graph edges and text-verified Episode/leaf mapping; no new embedding or answer request.",
+  "baseline_answer": "On 4 February 2023, Jolene achieved a major milestone in her engineering career. She mentioned that it was a huge accomplishment for her as an engineer and that it went really well. She expressed relief and pride, describing it as a significant moment where she saw a project she had worked on successfully come to life—specifically, a project that provided clean water to a community. This experience reinforced her sense of purpose and passion for engineering as a means to make a positive impact on people's lives."
+}

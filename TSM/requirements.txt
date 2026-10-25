@@ -1,0 +1,16 @@
+numpy>=1.26,<2
+PyYAML>=6,<7
+tqdm>=4.67,<5
+faiss-cpu>=1.9,<2
+neo4j>=5.26,<6
+graphiti-core==0.19.0
+networkx>=3.2,<4
+openai>=1.91,<3
+scikit-learn>=1.6,<2
+spacy>=3.8,<4
+click>=8,<9
+nest-asyncio>=1.6,<2
+python-dateutil>=2.9,<3
+dateparser>=1.4,<2
+umap-learn>=0.5.7,<0.6
+tiktoken>=0.12,<1

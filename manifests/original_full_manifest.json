@@ -1,0 +1,20 @@
+{
+  "run_id": "siliconflow_qwen_full_tmux_20261021",
+  "dataset": "/workspace/research/tsm_temporal_first/TSM/data/locomo/locomo10.json",
+  "dataset_sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+  "config": "/workspace/research/tsm_temporal_first/baseline/locomo_explicit_tsm_siliconflow_qwen_full_tmux_20261021.yaml",
+  "config_sha256": "3ebe6986d3592e3e5197b3d22d695046804e550c1aecd0be184948db4a65e1ac",
+  "result_sha256": "9bcea70370625ed0766356562439eef9acfcbbacf67906c51b5b7e16e511b2c0",
+  "code_commit": "7c1534dcf4ef4afb41afed6cb01746ec0b140d1e",
+  "code_status": "M graphiti_extractor.py\n M main_time.py\n M provider/public_embedder.py\n M provider/public_llm_provider.py\n?? provider/chat_completions_graphiti_client.py\n?? provider/request_trace.py",
+  "completed_at_from_log": "2026-10-23T06:45:50Z",
+  "llm_model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "llm_base_url": "https://api.siliconflow.cn/v1",
+  "embedding_model": "text-embedding-3-small",
+  "embedding_base_url": "https://api.relayrouter.ai/v1",
+  "max_chunk_setting": 20,
+  "trace_dense_k": 100,
+  "batch_size": 1,
+  "parallel_api_calls": 1,
+  "graphiti_max_tokens": 16384
+}

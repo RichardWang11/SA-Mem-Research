@@ -1,0 +1,46 @@
+{
+  "trace_files": 52352,
+  "status": {
+    "completed": 52349,
+    "error": 3
+  },
+  "stages": {
+    "graphiti": 24493,
+    "embedding": 27266,
+    "unspecified": 272,
+    "generation": 321
+  },
+  "non_completed": [
+    {
+      "file": "021596_graphiti_structured.json",
+      "status": "error",
+      "stage": "graphiti",
+      "error": "1 validation error for NodeResolutions\nentity_resolutions\n  Field required [type=missing, input_value={'$defs': {'NodeDuplicate...ions', 'type': 'object'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing"
+    },
+    {
+      "file": "027075_graphiti_structured.json",
+      "status": "error",
+      "stage": "graphiti",
+      "error": "1 validation error for NodeResolutions\nentity_resolutions\n  Field required [type=missing, input_value={'$defs': {'NodeDuplicate...ions', 'type': 'object'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing"
+    },
+    {
+      "file": "022002_graphiti_structured.json",
+      "status": "error",
+      "stage": "graphiti",
+      "error": "1 validation error for NodeResolutions\nentity_resolutions\n  Field required [type=missing, input_value={'$defs': {'NodeDuplicate...ions', 'type': 'object'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing"
+    }
+  ],
+  "token_totals": {
+    "graphiti.prompt_tokens": 19707861,
+    "graphiti.completion_tokens": 2295291,
+    "graphiti.total_tokens": 22003152,
+    "embedding.prompt_tokens": 222302,
+    "embedding.total_tokens": 222302,
+    "unspecified.prompt_tokens": 625567,
+    "unspecified.completion_tokens": 315531,
+    "unspecified.total_tokens": 941098,
+    "generation.prompt_tokens": 652881,
+    "generation.completion_tokens": 59369,
+    "generation.total_tokens": 712250
+  }
+}

@@ -1,0 +1,16 @@
+TSM (Temporal Semantic Memory)
+Copyright (c) 2026 Miao Su, Yucan Guo, Zhongni Hou, Long Bai, Zixuan Li,
+Yufei Zhang, Guojun Yin, Wei Lin, Xiaolong Jin, Jiafeng Guo, and Xueqi Cheng
+
+This project contains code derived from E-2GraphRAG:
+https://github.com/YiboZhao624/E-2GraphRAG
+Copyright (c) 2025 Yibo Zhao
+Licensed under the MIT License. See LICENSE.
+
+This project depends on Graphiti by Zep:
+https://github.com/getzep/graphiti
+Copyright its respective contributors
+Licensed under the Apache License 2.0. A copy is provided in GRAPHITI_LICENSE.
+
+LongMemEval and LoCoMo data are not redistributed. Dataset names and links are
+provided for reproducibility; their respective maintainers' terms apply.

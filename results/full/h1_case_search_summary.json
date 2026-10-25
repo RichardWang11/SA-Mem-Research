@@ -1,0 +1,32 @@
+{
+  "queries_scanned": 321,
+  "fully_mapped_queries": 40,
+  "queries_with_at_least_one_mapped_gold_outside_dense20": [
+    "conv-26_11"
+  ],
+  "mapped_gold_misses": [
+    {
+      "qid": "conv-26_11",
+      "dia_id": "D3:13",
+      "leaves": [
+        "leaf_23"
+      ],
+      "ranks": {
+        "leaf_23": 24
+      }
+    },
+    {
+      "qid": "conv-26_11",
+      "dia_id": "D4:3",
+      "leaves": [
+        "leaf_29"
+      ],
+      "ranks": {
+        "leaf_29": 23
+      }
+    }
+  ],
+  "scope": "Existing incomplete Dense memory only; unknown/missing-source mappings are not counted as dense recall failures.",
+  "verified_temporal_first_rescuable_cases": 0,
+  "last_field_scope": "No verified case among inspected Dense-Miss candidates; not a statement about corrected full memory."
+}

@@ -1,0 +1,27 @@
+{
+  "run_id": "siliconflow_qwen_rawtrace_smoke_20261021_v3",
+  "archived_file_count": 4316,
+  "archive_sha256": "f6947c9bfb718d829ef41013ed5063481992502757a0445ea3f4715f4c453240",
+  "request_status": {
+    "completed": 4299,
+    "error": 1
+  },
+  "stages": {
+    "graphiti": 2027,
+    "embedding": 2244,
+    "unspecified": 28,
+    "generation": 1
+  },
+  "token_usage_logged": {
+    "prompt_tokens": 1726562,
+    "completion_tokens": 242331,
+    "total_tokens": 1968893
+  },
+  "batch_size": 1,
+  "parallel_api_calls": 1,
+  "graphiti_max_tokens": 16384,
+  "query": "conv-26_11",
+  "full_conv26_history_input": true,
+  "quality_acceptance": false,
+  "llm_judge_acc": null
+}

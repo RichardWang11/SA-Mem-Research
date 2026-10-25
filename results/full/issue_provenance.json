@@ -1,0 +1,73 @@
+{
+  "verified_at_utc": "2026-10-23T17:00:44.473050+00:00",
+  "upstream_commit": "0da3633ba8e27e9f8122872ff775587116948f5e",
+  "remote_head": "0da3633ba8e27e9f8122872ff775587116948f5e\tHEAD",
+  "files": {
+    "build_tree_clustering_time.py": {
+      "github_equals_official_git_blob": true,
+      "current_equals_official": true,
+      "official_sha256": "446837598b4c9ad86040a63c5ba4412e8b71231ef4a8211bc2765b8b5ea5fad2",
+      "current_sha256": "446837598b4c9ad86040a63c5ba4412e8b71231ef4a8211bc2765b8b5ea5fad2"
+    },
+    "dataloader.py": {
+      "github_equals_official_git_blob": true,
+      "current_equals_official": true,
+      "official_sha256": "464207f98fc82a56cd269f47ffad8f2b69ff7c34d93084d00169a22b7db58c79",
+      "current_sha256": "464207f98fc82a56cd269f47ffad8f2b69ff7c34d93084d00169a22b7db58c79"
+    },
+    "process_utils.py": {
+      "github_equals_official_git_blob": true,
+      "current_equals_official": true,
+      "official_sha256": "a24446b2e187c0438f74de65dbff4e382470aed78b1e73ad93558e6ec7670f28",
+      "current_sha256": "a24446b2e187c0438f74de65dbff4e382470aed78b1e73ad93558e6ec7670f28"
+    },
+    "configs/locomo/tsm.yaml": {
+      "github_equals_official_git_blob": true,
+      "current_equals_official": true,
+      "official_sha256": "372928aee8d9ff4958643a14f4a4ee77f994c0007e13e3c42d9101f0416c2d14",
+      "current_sha256": "372928aee8d9ff4958643a14f4a4ee77f994c0007e13e3c42d9101f0416c2d14"
+    },
+    "graphiti_extractor.py": {
+      "github_equals_official_git_blob": true,
+      "current_equals_official": false,
+      "official_sha256": "6e373776f5b1b8a72ec829b1682beaab08d25524b411477eb2b004c115b11f98",
+      "current_sha256": "7a44b6ae8a384a620bfc1dd0e5da81472ef3734ea3be30581eff041b2dd37a30"
+    }
+  },
+  "reproduction": {
+    "reference_time_input": "Date: 7:55 pm on 9 June, 2023\nUser: example",
+    "reference_time_output": "2000-01-01T00:00:22+00:00",
+    "window_leaf_outputs": [
+      {
+        "source_window_texts": [
+          "WINDOW_A_EPISODE_3",
+          "WINDOW_A_EPISODE_4"
+        ],
+        "saved_leaf_texts": {
+          "leaf_0": "GLOBAL_ROUND_0",
+          "leaf_1": "GLOBAL_ROUND_1"
+        }
+      },
+      {
+        "source_window_texts": [
+          "WINDOW_B_EPISODE_2"
+        ],
+        "saved_leaf_texts": {
+          "leaf_0": "GLOBAL_ROUND_0"
+        }
+      }
+    ],
+    "merged_leaf_count": 2,
+    "merged_leaf_texts": {
+      "leaf_0": "GLOBAL_ROUND_0",
+      "leaf_1": "GLOBAL_ROUND_1"
+    }
+  },
+  "local_changes_diff_file": "local_vs_upstream.patch",
+  "limits": [
+    "These offline reproductions establish implementation defects, not end-to-end model extraction accuracy.",
+    "Current source and git history are inspected after the run; no immutable full source snapshot was saved at run start."
+  ],
+  "reference_time_function_current_equals_official": true,
+  "originating_commit_for_tree_and_reference_time": "7209afe664508f0534e438790b9a5f54f5946704"
+}

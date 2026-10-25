@@ -1,0 +1,76 @@
+experiment:
+  name: locomo_tsm
+  method: tsm
+  entrypoint: TSM/main_time.py
+dataset:
+  dataset_name: Locomo
+  dataset_path: TSM/data/locomo/locomo10.json
+cluster:
+  length: 1000
+  overlap: 200
+  merge_num: 3
+language: en
+llm:
+  api_model: gpt-4o-mini
+  max_tokens: 8192
+  temperature: 0
+  api_key_env: OPENAI_API_KEY
+  base_url: https://api.openai.com/v1
+  api_protocol: responses
+embedding:
+  backend: openai_compatible
+  model: text-embedding-3-small
+  dimension: 1536
+  batch_size: 128
+  api_key_env: OPENAI_EMBEDDING_API_KEY
+  base_url: https://api.openai.com/v1
+paths:
+  log_path: outputs/locomo/tsm/logs
+  answer_path: outputs/locomo/tsm/answers
+  cache_path: outputs/locomo/tsm/cache
+resume:
+  resumeIndex: 0
+  start_index: 0
+retriever:
+  kwargs:
+    enable_dense_retrieval: true
+    prebuilt_index: true
+    embedder: PublicEmbedder
+    embedding_batch_size: 128
+    shortest_path_k: 4
+    max_chunk_setting: 20
+    enable_temporal_filter: true
+    chunks_only: false
+    use_gpu_faiss: false
+    trace_enabled: true
+    trace_dense_k: 100
+split_method: round_based
+temporal:
+  enable: false
+extraction:
+  method: graphiti
+graphiti:
+  neo4j:
+    uri_env: NEO4J_URI
+    user_env: NEO4J_USER
+    password_env: NEO4J_PASSWORD
+    database_env: NEO4J_DATABASE
+    uri: bolt://localhost:7687
+    user: neo4j
+    database: neo4j
+  group_id_prefix: locomo_tsm_
+  reset_group: true
+entity_clustering:
+  enable: true
+  threshold: 0.1
+use_user_only: true
+parallel_api_calls: 8
+batch_size: 8
+use_batch_api: false
+llm_parallel:
+  enable_parallel: true
+  max_parallel_llm: 8
+  llm_retry_count: 3
+  llm_timeout: 120
+use_improved_paths: false
+query_filter_path: selection/explicit321_qids.json

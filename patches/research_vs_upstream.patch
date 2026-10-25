@@ -1,0 +1,943 @@
+diff --git a/.gitignore b/.gitignore
+index 9a8e2c4..5c62c9a 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,6 +1,7 @@
+ .DS_Store
+ .env
+ .venv/
++.venv312/
+ __pycache__/
+ *.py[cod]
+ .pytest_cache/
+diff --git a/dense_retriever.py b/dense_retriever.py
+index b82530b..bf7b7a5 100644
+--- a/dense_retriever.py
++++ b/dense_retriever.py
+@@ -96,6 +96,43 @@ class DenseRetriever:
+         logger.info(f"Dense retrieval completed: {len(filtered_chunk_ids)} results")
+         return {"": filtered_chunk_ids}
+ 
++    async def retrieve_with_trace(
++        self,
++        query: str,
++        k: int,
++        trace_k: int,
++        selected_snapshots: Optional[List[Dict]] = None,
++    ) -> tuple[Dict[str, List[str]], Dict[str, List[str]]]:
++        """Retrieve with an optional wider FAISS audit, preserving baseline output.
++
++        The first return value is exactly the result produced by ``retrieve`` with
++        ``k``: the raw FAISS list is sliced before candidate filtering. The second
++        return value exposes the filtered candidate IDs at ``trace_k``. This keeps
++        tracing observational while avoiding a second query embedding call.
++        """
++        if self.faiss_index is None:
++            return {"": []}, {"dense_top20_ids": [], "dense_top100_ids": []}
++
++        query_embed = await self._encode_query(query)
++        if query_embed is None:
++            return {"": []}, {"dense_top20_ids": [], "dense_top100_ids": []}
++
++        search_k = max(int(k), int(trace_k))
++        raw_candidates = self._search_faiss(query_embed, search_k)
++        selected_summary_node_ids = self._collect_summary_node_ids(selected_snapshots)
++
++        baseline_candidates = self._filter_candidates(
++            raw_candidates[:k], selected_summary_node_ids, selected_snapshots
++        )
++        traced_candidates = self._filter_candidates(
++            raw_candidates[:trace_k], selected_summary_node_ids, selected_snapshots
++        )
++        trace = {
++            "dense_top20_ids": baseline_candidates,
++            "dense_top100_ids": traced_candidates,
++        }
++        return {"": baseline_candidates}, trace
++
+     async def _encode_query(self, query: str) -> Optional[np.ndarray]:
+         """Encode query using embedder."""
+         try:
+diff --git a/graphiti_extractor.py b/graphiti_extractor.py
+index dae31a3..a39489f 100644
+--- a/graphiti_extractor.py
++++ b/graphiti_extractor.py
+@@ -8,7 +8,6 @@ used by the original E2GraphRAG pipeline.
+ from __future__ import annotations
+ 
+ import asyncio
+-import hashlib
+ import json
+ import logging
+ import os
+@@ -19,7 +18,6 @@ from concurrent.futures import ThreadPoolExecutor
+ from datetime import datetime, timedelta, timezone
+ from pathlib import Path
+ from typing import Any
+-from uuid import NAMESPACE_URL, uuid5
+ 
+ import networkx as nx
+ 
+@@ -35,6 +33,170 @@ try:
+     from graphiti_core.llm_client.openai_client import OpenAIClient
+     from graphiti_core.nodes import EpisodeType
+     from graphiti_core.utils.bulk_utils import RawEpisode
++    from openai.resources.responses.responses import _type_to_text_format_param
++    from provider.chat_completions_graphiti_client import ChatCompletionsGraphitiClient
++    from provider.request_trace import jsonable, start_request
++
++    class _TraceGraphitiMixin:
++        async def _create_structured_completion(
++            self,
++            model,
++            messages,
++            temperature,
++            max_tokens,
++            response_model,
++            reasoning=None,
++            verbosity=None,
++        ):
++            trace = start_request(
++                "graphiti_structured",
++                {
++                    "stage": "graphiti",
++                    "endpoint": getattr(getattr(self, "config", None), "base_url", None),
++                    "model": model,
++                    "request": {
++                        "messages": jsonable(messages),
++                        "temperature": temperature,
++                        "max_output_tokens": max_tokens,
++                        "response_model": getattr(response_model, "__name__", str(response_model)),
++                        "reasoning": reasoning,
++                        "verbosity": verbosity,
++                    },
++                },
++            )
++            trace_written = False
++            try:
++                response = await super()._create_structured_completion(
++                    model=model,
++                    messages=messages,
++                    temperature=temperature,
++                    max_tokens=max_tokens,
++                    response_model=response_model,
++                    reasoning=reasoning,
++                    verbosity=verbosity,
++                )
++                saved_response = {
++                    "status": getattr(response, "status", None),
++                    "incomplete_details": jsonable(
++                        getattr(response, "incomplete_details", None)
++                    ),
++                    "output_text": getattr(response, "output_text", None),
++                    "usage": jsonable(getattr(response, "usage", None)),
++                    "id": getattr(response, "id", None),
++                }
++
++                # Chat Completions returns the raw text before TSM's base
++                # client calls json.loads(). Validate here so malformed or
++                # truncated output is saved together with the raw response.
++                parsed_output = json.loads(saved_response.get("output_text") or "")
++                response_model.model_validate(parsed_output)
++
++                trace.finish({"response": saved_response})
++                trace_written = True
++                return response
++            except Exception as exc:
++                if not trace_written:
++                    payload = locals().get("saved_response")
++                    trace.fail(
++                        exc,
++                        {
++                            "response": payload,
++                            "parse_stage": "local_structured_validation"
++                            if payload is not None
++                            else "request",
++                        },
++                    )
++                    trace_written = True
++                raise
++
++    class TraceOpenAIClient(OpenAIClient):
++        """Responses client that preserves raw output when parsing fails.
++
++        ``AsyncResponses.parse`` applies its Pydantic parser inside the SDK
++        before returning the response object. When that parser sees truncated
++        JSON, the normal TSM trace only receives the validation exception and
++        loses the raw output, usage, and incomplete metadata. Use the same
++        Responses request through ``create`` and validate locally so the raw
++        response can be saved before re-raising the same kind of error.
++        """
++
++        async def _create_structured_completion(
++            self,
++            model,
++            messages,
++            temperature,
++            max_tokens,
++            response_model,
++            reasoning=None,
++            verbosity=None,
++        ):
++            trace = start_request(
++                "graphiti_structured",
++                {
++                    "stage": "graphiti",
++                    "endpoint": getattr(getattr(self, "config", None), "base_url", None),
++                    "model": model,
++                    "request": {
++                        "messages": jsonable(messages),
++                        "temperature": temperature,
++                        "max_output_tokens": max_tokens,
++                        "response_model": getattr(response_model, "__name__", str(response_model)),
++                        "reasoning": reasoning,
++                        "verbosity": verbosity,
++                    },
++                },
++            )
++            trace_written = False
++
++            def response_payload(response):
++                return {
++                    "status": getattr(response, "status", None),
++                    "incomplete_details": jsonable(
++                        getattr(response, "incomplete_details", None)
++                    ),
++                    "output_text": getattr(response, "output_text", None),
++                    "usage": jsonable(getattr(response, "usage", None)),
++                    "id": getattr(response, "id", None),
++                }
++
++            try:
++                response = await self.client.responses.create(
++                    model=model,
++                    input=messages,
++                    temperature=temperature,
++                    max_output_tokens=max_tokens,
++                    text={"format": _type_to_text_format_param(response_model)},
++                    reasoning={"effort": reasoning} if reasoning is not None else None,
++                )
++                saved_response = response_payload(response)
++
++                # Validate before returning. BaseOpenAIClient will parse the
++                # same JSON again, while this first pass ensures that failures
++                # retain the raw text and provider metadata in the trace.
++                raw_output = saved_response.get("output_text") or ""
++                parsed_output = json.loads(raw_output)
++                response_model.model_validate(parsed_output)
++
++                trace.finish({"response": saved_response})
++                trace_written = True
++                return response
++            except Exception as exc:
++                if not trace_written:
++                    payload = locals().get("saved_response")
++                    trace.fail(
++                        exc,
++                        {
++                            "response": payload,
++                            "parse_stage": "local_structured_validation"
++                            if payload is not None
++                            else "request",
++                        },
++                    )
++                    trace_written = True
++                raise
++
++    class TraceChatCompletionsGraphitiClient(_TraceGraphitiMixin, ChatCompletionsGraphitiClient):
++        pass
+ 
+     GRAPHITI_AVAILABLE = True
+ except ImportError:
+@@ -104,16 +266,34 @@ class GraphitiExtractor:
+         backend_model = self.llm_api_config.get(
+             "backend_model", self.llm_api_config.get("model", "gpt-4o-mini")
+         )
++        graphiti_max_tokens = int(
++            self.llm_api_config.get(
++                "graphiti_max_tokens", self.llm_api_config.get("max_tokens", 8192)
++            )
++        )
+         llm_config = LLMConfig(
+             api_key=api_key,
+             model=backend_model,
+             small_model=backend_model,
+             base_url=base_url,
+             temperature=self.llm_api_config.get("temperature", 0),
+-            max_tokens=self.llm_api_config.get("max_tokens", 8192),
+-            request_timeout=self.llm_api_config.get("timeout", 120),
++            max_tokens=graphiti_max_tokens,
++        )
++        # graphiti-core defaults to sending reasoning.effort/verbosity. The
++        # configured gpt-4o-mini-compatible RelayRouter endpoint rejects those
++        # optional fields, while the TSM config already fixes temperature=0.
++        client_class = (
++            TraceChatCompletionsGraphitiClient
++            if self.llm_api_config.get("api_protocol") == "chat_completions"
++            else TraceOpenAIClient
++        )
++        llm_client = client_class(
++            config=llm_config,
++            cache=False,
++            max_tokens=graphiti_max_tokens,
++            reasoning=None,
++            verbosity=None,
+         )
+-        llm_client = OpenAIClient(config=llm_config, cache=False)
+         embedder = PublicEmbedder.from_config(self.embedding_config)
+         cross_encoder = StableOrderCrossEncoder()
+ 
+@@ -325,15 +505,11 @@ class GraphitiExtractor:
+ 
+             episodes = []
+             for index, text in enumerate(text_chunks):
+-                stable_uuid = str(
+-                    uuid5(
+-                        NAMESPACE_URL,
+-                        f"tsm:{group_id}:{index}:{hashlib.sha256(text.encode('utf-8')).hexdigest()}",
+-                    )
+-                )
++                # Graphiti 0.19 treats a non-null RawEpisode UUID as an
++                # existing node lookup. Leave it unset for new episodes; the
++                # stable chunk identity used by TSM is the episode name.
+                 episodes.append(
+                     RawEpisode(
+-                        uuid=stable_uuid,
+                         name=f"chunk_{index}",
+                         content=text,
+                         source=EpisodeType.text,
+diff --git a/main_time.py b/main_time.py
+index 1d70de3..4f352b3 100644
+--- a/main_time.py
++++ b/main_time.py
+@@ -282,7 +282,7 @@ def get_llm_api_config(configs):
+     llm_parallel = configs.get("llm_parallel", {})
+     logical_model = llm_config.get("api_model", llm_config.get("model", "gpt-4o-mini"))
+     backend_model = llm_config.get("backend_model", logical_model)
+-    return {
++    resolved = {
+         "type": "openai_compatible",
+         "model": logical_model,
+         "backend_model": backend_model,
+@@ -293,6 +293,13 @@ def get_llm_api_config(configs):
+         "max_retries": llm_parallel.get("llm_retry_count", 3),
+         "timeout": llm_parallel.get("llm_timeout", 120),
+     }
++    # Graphiti has a separate structured-output budget. Preserve the optional
++    # override instead of silently dropping it during config normalization.
++    if "graphiti_max_tokens" in llm_config:
++        resolved["graphiti_max_tokens"] = llm_config["graphiti_max_tokens"]
++    if "api_protocol" in llm_config:
++        resolved["api_protocol"] = llm_config["api_protocol"]
++    return resolved
+ 
+ def load_llm(configs):
+     # 统一返回MT API配置
+@@ -726,6 +733,42 @@ def _extract_golden_evidence(qa_piece):
+         }
+     return golden_evidence
+ 
++
++def _load_query_filter(path):
++    """Load an optional QID allowlist without changing the memory corpus."""
++    if not path:
++        return None
++
++    with open(path, "r", encoding="utf-8") as handle:
++        payload = json.load(handle)
++
++    if isinstance(payload, dict):
++        qids = payload.get("selected_qids", payload.get("qids", []))
++    else:
++        qids = payload
++    if not isinstance(qids, list) or not all(isinstance(item, str) for item in qids):
++        raise ValueError(f"query filter must contain a list of string QIDs: {path}")
++    return set(qids)
++
++
++def _load_cached_dense_index(cache_folder, tree, config_bundle):
++    """Load a validated FAISS cache for query-only and resumed runs."""
++    if not config_bundle.retriever_kwargs.get("prebuilt_index", False):
++        return None
++    try:
++        from build_dense_index import load_dense_index_cache, validate_index_cache
++
++        if not validate_index_cache(cache_folder, tree):
++            return None
++        index, doc_ids, _ = load_dense_index_cache(cache_folder)
++        if index is None or not doc_ids:
++            return None
++        logger.info(f"Loaded cached FAISS index for {cache_folder}: {len(doc_ids)} documents")
++        return index, doc_ids
++    except Exception as exc:
++        logger.warning(f"Cached FAISS index unavailable for {cache_folder}: {exc}")
++        return None
++
+ @log_exceptions()
+ async def _process_single_qa(qa_piece, j, retriever, config_bundle, llm, i, logger, config_info):
+     """处理单个QA问题的核心逻辑"""
+@@ -848,7 +891,7 @@ async def _process_single_qa(qa_piece, j, retriever, config_bundle, llm, i, logg
+         answer_time = time.time() - answer_start_time
+         logger.info(f"问题 {j} 答案生成完成，耗时: {answer_time:.3f}秒")
+ 
+-        return {
++        question_result = {
+             "question_id": question_id,
+             "question": question,
+             "answer": answer,
+@@ -859,6 +902,9 @@ async def _process_single_qa(qa_piece, j, retriever, config_bundle, llm, i, logg
+             "query_time": query_time,
+             "generation_time": answer_time
+         }
++        if model_supplement.get("retrieval_trace") is not None:
++            question_result["retrieval_trace"] = model_supplement["retrieval_trace"]
++        return question_result
+     finally:
+         # 清除生成阶段
+         if tracker:
+@@ -1192,6 +1238,15 @@ async def run_pipeline(configs, logger):
+     query_only = configs.get("query_only", False)  # 新增：获取query_only标志
+     force_rebuild = configs.get("force_rebuild", False) # 新增：获取force_rebuild标志
+     rebuild_snapshots = configs.get("rebuild_snapshots", False)  # 新增：强制重新构建snapshots
++    query_filter_qids = _load_query_filter(configs.get("query_filter_path"))
++    conversation_filter = set(configs.get("conversation_filter", []))
++    if query_filter_qids is not None:
++        logger.info(
++            f"Query filter enabled: {len(query_filter_qids)} QIDs; "
++            "memory history remains complete"
++        )
++    if conversation_filter:
++        logger.info(f"Conversation smoke filter enabled: {sorted(conversation_filter)}")
+     if query_only:
+         logger.info("=== 仅查询模式：使用现有缓存重新回答问题 ===")
+     if force_rebuild:
+@@ -1254,6 +1309,13 @@ async def run_pipeline(configs, logger):
+     # 修复切片问题：手动创建从start_index开始的索引列表
+     total_items = len(dataset)
+     remaining_indices = list(range(start_index, total_items))
++    if conversation_filter:
++        remaining_indices = [
++            index
++            for index in remaining_indices
++            if dataset[index].get("group_id") in conversation_filter
++            or dataset.available_ids[index] in conversation_filter
++        ]
+     # #region agent log
+     # #endregion
+ 
+@@ -1293,6 +1355,7 @@ async def run_pipeline(configs, logger):
+ 
+         logger.info(f"使用 group_id: {group_id} (base: {base_group_id}, prefix: {group_id_prefix})")
+         piece_name = dataset.available_ids[actual_index]
++        dense_index_result = None
+ 
+         # 检查是否已完成此数据项（仅在非query_only模式下跳过）
+         if not query_only and resume_manager.is_piece_completed(piece_name):
+@@ -1360,6 +1423,7 @@ async def run_pipeline(configs, logger):
+ 
+                 # 重构图数据结构
+                 graph = (graph_nx, index, appearance_count, text_edge_mapping)
++                dense_index_result = _load_cached_dense_index(cache_to_use, tree, config_bundle)
+                 skipped_stages.append('indexing')
+                 logger.info(f"成功从缓存加载: {piece_name}")
+ 
+@@ -1461,6 +1525,7 @@ async def run_pipeline(configs, logger):
+ 
+                 # 重构图数据结构（包含text_edge_mapping作为第4个元素）
+                 graph = (graph_nx, index, appearance_count, text_edge_mapping)
++                dense_index_result = _load_cached_dense_index(cache_folder, tree, config_bundle)
+                 skipped_stages.append('indexing')
+                 logger.info(f"从缓存加载索引: {piece_name}")
+ 
+@@ -1562,6 +1627,17 @@ async def run_pipeline(configs, logger):
+ 
+         # 5. qa
+         qa_list = data_piece["qa"]
++        if query_filter_qids is not None:
++            qa_before_filter = len(qa_list)
++            qa_list = [
++                qa_piece
++                for qa_piece in qa_list
++                if qa_piece.get("question_id") in query_filter_qids
++            ]
++            logger.info(
++                f"Query filter for {piece_name}: selected {len(qa_list)} of "
++                f"{qa_before_filter} QA items after full-memory preparation"
++            )
+ 
+         # 获取结果文件路径来检查已完成的QA
+         if paths:
+diff --git a/provider/public_embedder.py b/provider/public_embedder.py
+index 81b3697..c906838 100644
+--- a/provider/public_embedder.py
++++ b/provider/public_embedder.py
+@@ -11,6 +11,8 @@ from typing import Any
+ 
+ from openai import AsyncOpenAI
+ 
++from .request_trace import jsonable, start_request
++
+ try:
+     from graphiti_core.embedder.client import EmbedderClient
+ except ImportError:  # keeps the offline smoke independent of Graphiti/Neo4j
+@@ -101,15 +103,59 @@ class PublicEmbedder(EmbedderClient):
+         if self.backend == "hash":
+             return self._hash_embedding(text)
+         assert self.client is not None
+-        response = await self.client.embeddings.create(input=input_data, model=self.model)
+-        return response.data[0].embedding[: self.dimension]
++        trace = start_request(
++            "embedding",
++            {
++                "stage": "embedding",
++                "endpoint": self.base_url,
++                "model": self.model,
++                "request": {"input": jsonable(input_data)},
++            },
++        )
++        try:
++            response = await self.client.embeddings.create(input=input_data, model=self.model)
++            trace.finish(
++                {
++                    "response": {
++                        "count": len(response.data),
++                        "dimension": len(response.data[0].embedding) if response.data else 0,
++                        "usage": jsonable(getattr(response, "usage", None)),
++                    }
++                }
++            )
++            return response.data[0].embedding[: self.dimension]
++        except Exception as exc:
++            trace.fail(exc)
++            raise
+ 
+     async def create_batch(self, input_data_list: list[str]) -> list[list[float]]:
+         if self.backend == "hash":
+             return [self._hash_embedding(text) for text in input_data_list]
+         assert self.client is not None
+-        response = await self.client.embeddings.create(input=input_data_list, model=self.model)
+-        return [item.embedding[: self.dimension] for item in response.data]
++        trace = start_request(
++            "embedding",
++            {
++                "stage": "embedding",
++                "endpoint": self.base_url,
++                "model": self.model,
++                "request": {"input": jsonable(input_data_list)},
++            },
++        )
++        try:
++            response = await self.client.embeddings.create(input=input_data_list, model=self.model)
++            trace.finish(
++                {
++                    "response": {
++                        "count": len(response.data),
++                        "dimension": len(response.data[0].embedding) if response.data else 0,
++                        "usage": jsonable(getattr(response, "usage", None)),
++                    }
++                }
++            )
++            return [item.embedding[: self.dimension] for item in response.data]
++        except Exception as exc:
++            trace.fail(exc)
++            raise
+ 
+     async def embed_texts(self, texts: list[str]) -> list[list[float]]:
+         return await self.create_batch(texts)
+diff --git a/provider/public_llm_provider.py b/provider/public_llm_provider.py
+index 27874b4..d93a375 100644
+--- a/provider/public_llm_provider.py
++++ b/provider/public_llm_provider.py
+@@ -9,6 +9,7 @@ from typing import Any
+ from openai import OpenAI
+ 
+ from .base_provider import BaseLLMProvider
++from .request_trace import jsonable, start_request
+ 
+ 
+ DEFAULT_BASE_URL = "https://api.openai.com/v1"
+@@ -80,15 +81,45 @@ class OpenAICompatibleProvider(BaseLLMProvider):
+             params["tool_choice"] = tool_choice
+         params.update(kwargs)
+ 
++        trace = start_request(
++            "tsm_chat_completion",
++            {
++                "stage": op_type or "unspecified",
++                "endpoint": self.base_url,
++                "model": model,
++                "request": {
++                    "messages": jsonable(messages),
++                    "max_tokens": max_tokens,
++                    "stream": stream,
++                    "has_tools": tools is not None,
++                    "tool_choice": jsonable(tool_choice),
++                    "extra": jsonable(kwargs),
++                },
++            },
++        )
++
+         last_error: Exception | None = None
+         for attempt in range(self.retry):
+             try:
+-                return self.client.chat.completions.create(**params)
++                response = self.client.chat.completions.create(**params)
++                trace.finish(
++                    {
++                        "attempt": attempt + 1,
++                        "response": {
++                            "id": getattr(response, "id", None),
++                            "model": getattr(response, "model", None),
++                            "choices": jsonable(getattr(response, "choices", None)),
++                            "usage": jsonable(getattr(response, "usage", None)),
++                        },
++                    }
++                )
++                return response
+             except Exception as exc:  # the OpenAI SDK exposes provider-specific subclasses
+                 last_error = exc
+                 if attempt + 1 < self.retry:
+                     time.sleep(self.retry_interval * (attempt + 1))
+         assert last_error is not None
++        trace.fail(last_error, {"attempts": self.retry})
+         raise last_error
+ 
+ 
+diff --git a/query_refactored.py b/query_refactored.py
+index 78d5423..e1465d5 100644
+--- a/query_refactored.py
++++ b/query_refactored.py
+@@ -98,6 +98,9 @@ class RefactoredRetriever:
+         self._last_temporal_constraint: Optional[TemporalConstraint] = None
+         self._last_temporal_order: Optional[str] = None
+         self._last_reference_date: Optional[datetime] = None
++        self.trace_enabled = bool(kwargs.get("trace_enabled", False))
++        self.trace_dense_k = int(kwargs.get("trace_dense_k", 100))
++        self.last_retrieval_trace: Dict[str, Any] = {}
+ 
+         logger.info("RefactoredRetriever initialized successfully")
+ 
+@@ -361,6 +364,24 @@ class RefactoredRetriever:
+             temporal_order = temporal_info["order"]
+             reference_date = temporal_info["reference_date"]
+ 
++            self.last_retrieval_trace = {
++                "question": query,
++                "tsm_parser_hit": bool(
++                    temporal_constraint is not None and not temporal_constraint.is_empty()
++                ),
++                "parsed_time_ranges": [
++                    {
++                        "start": item.start.isoformat(),
++                        "end": item.end.isoformat(),
++                        "phrase": item.phrase,
++                        "granularity": item.granularity,
++                    }
++                    for item in (temporal_constraint.ranges if temporal_constraint else [])
++                ],
++                "temporal_order": temporal_order,
++                "reference_date": reference_date.isoformat() if reference_date else None,
++            }
++
+             # Step 3: Select snapshots
+             selected_snapshots = self._select_snapshots(temporal_constraint, reference_date)
+ 
+@@ -503,13 +524,25 @@ class RefactoredRetriever:
+         logger.info("Performing dense retrieval")
+ 
+         # Get chunks from dense retriever
+-        chunk_ids = run_async_embedding(
+-            self.dense_retriever.retrieve(
+-                query,
+-                kwargs.get("max_chunk_setting", 25),
+-                selected_snapshots,
++        max_chunks = kwargs.get("max_chunk_setting", 25)
++        if self.trace_enabled:
++            chunk_ids, dense_trace = run_async_embedding(
++                self.dense_retriever.retrieve_with_trace(
++                    query,
++                    max_chunks,
++                    self.trace_dense_k,
++                    selected_snapshots,
++                )
++            )
++            self.last_retrieval_trace.update(dense_trace)
++        else:
++            chunk_ids = run_async_embedding(
++                self.dense_retriever.retrieve(
++                    query,
++                    max_chunks,
++                    selected_snapshots,
++                )
+             )
+-        )
+ 
+         # Apply temporal filtering
+         if self.temporal_filter_enabled:
+@@ -525,6 +558,23 @@ class RefactoredRetriever:
+ 
+         result = {"chunks": chunks_str}
+         result.update(summary_info)
++        if self.trace_enabled:
++            self.last_retrieval_trace.update(
++                {
++                    "graphiti_matched_edges": self._json_safe(
++                        self.temporal_filter.last_temporal_edges
++                    ),
++                    "temporal_matched_chunk_ids": sorted(
++                        self.temporal_filter.temporal_matched_chunk_ids
++                    ),
++                    "final_context_ids": [
++                        chunk_id
++                        for chunk_ids_for_key in chunk_ids.values()
++                        for chunk_id in chunk_ids_for_key
++                    ],
++                }
++            )
++            result["retrieval_trace"] = self._json_safe(self.last_retrieval_trace)
+ 
+         logger.info(f"Dense retrieval completed: {self._count_chunks(chunk_ids)} chunks")
+         return result
+@@ -722,6 +772,19 @@ class RefactoredRetriever:
+ 
+         return metadata
+ 
++    @staticmethod
++    def _json_safe(value: Any) -> Any:
++        """Convert Neo4j temporal values in optional traces to JSON-safe values."""
++        if isinstance(value, dict):
++            return {str(key): RefactoredRetriever._json_safe(child) for key, child in value.items()}
++        if isinstance(value, (list, tuple, set)):
++            return [RefactoredRetriever._json_safe(child) for child in value]
++        if hasattr(value, "iso_format"):
++            return value.iso_format()
++        if hasattr(value, "isoformat"):
++            return value.isoformat()
++        return value
++
+     @staticmethod
+     def _count_chunks(chunk_map: Dict[str, List[str]]) -> int:
+         """Count total chunks in chunk map."""
+diff --git a/temporal_filter.py b/temporal_filter.py
+index 0cfd18e..ed3b7a4 100644
+--- a/temporal_filter.py
++++ b/temporal_filter.py
+@@ -74,9 +74,13 @@ class TemporalFilter:
+         if not isinstance(chunk_map, dict):
+             return chunk_map
+ 
++        # Reset per-query state so an audit trace cannot inherit matches from the
++        # preceding question when a local fallback is used.
++        self.last_temporal_edges = []
++        self.temporal_matched_chunk_ids = set()
++
+         # No constraint: return as-is or apply reference date filtering
+         if constraint is None or constraint.is_empty():
+-            self.temporal_matched_chunk_ids = set()
+             return chunk_map
+ 
+         # Try Graphiti-based filtering first
+@@ -563,4 +567,4 @@ class TemporalFilter:
+     @staticmethod
+     def _count_chunks(chunk_map: Dict[str, List[str]]) -> int:
+         """Count total chunks in chunk map."""
+-        return sum(len(chunk_ids) for chunk_ids in chunk_map.values())
+\ No newline at end of file
++        return sum(len(chunk_ids) for chunk_ids in chunk_map.values())
+diff --git a/provider/chat_completions_graphiti_client.py b/provider/chat_completions_graphiti_client.py
+new file mode 100644
+index 0000000..4f9acaa
+--- /dev/null
++++ b/provider/chat_completions_graphiti_client.py
+@@ -0,0 +1,71 @@
++"""Graphiti client adapter for providers exposing Chat Completions only.
++
++Graphiti's current OpenAIClient uses the newer Responses API for structured
++outputs. SiliconFlow documents the OpenAI-compatible Chat Completions API
++instead, so this adapter keeps the Graphiti client contract while requesting a
++JSON object from ``/chat/completions``.
++"""
++
++from __future__ import annotations
++
++import json
++from types import SimpleNamespace
++from typing import Any
++
++from openai.types.chat import ChatCompletionMessageParam
++from pydantic import BaseModel
++
++from graphiti_core.llm_client.openai_client import OpenAIClient
++
++
++class ChatCompletionsGraphitiClient(OpenAIClient):
++    """Use OpenAI-compatible Chat Completions for Graphiti structured calls."""
++
++    async def _create_structured_completion(
++        self,
++        model: str,
++        messages: list[ChatCompletionMessageParam],
++        temperature: float | None,
++        max_tokens: int,
++        response_model: type[BaseModel],
++        reasoning: str | None = None,
++        verbosity: str | None = None,
++    ) -> Any:
++        # SiliconFlow supports JSON mode, while its documented API does not
++        # expose the Responses API or OpenAI's beta parse endpoint. Include the
++        # schema in the prompt so JSON mode still has the expected shape.
++        schema = json.dumps(response_model.model_json_schema(), ensure_ascii=False)
++        prompt = (
++            "\n\nReturn only one valid JSON object. It must conform to this JSON schema:\n"
++            f"{schema}"
++        )
++        chat_messages = list(messages)
++        if chat_messages:
++            last = dict(chat_messages[-1])
++            content = last.get("content") or ""
++            last["content"] = f"{content}{prompt}"
++            chat_messages[-1] = last  # type: ignore[assignment]
++
++        response = await self.client.chat.completions.create(
++            model=model,
++            messages=chat_messages,
++            temperature=temperature,
++            max_tokens=max_tokens,
++            response_format={"type": "json_object"},
++        )
++        content = response.choices[0].message.content or ""
++        finish_reason = getattr(response.choices[0], "finish_reason", None)
++        status = "completed" if finish_reason in (None, "stop") else "incomplete"
++        incomplete_details = (
++            {"reason": "max_tokens"} if finish_reason == "length" else None
++        )
++        # BaseOpenAIClient._handle_structured_response consumes output_text.
++        # Preserve provider metadata so the diagnostic trace can distinguish a
++        # valid JSON response from a Chat Completions length cutoff.
++        return SimpleNamespace(
++            output_text=content,
++            status=status,
++            incomplete_details=incomplete_details,
++            usage=getattr(response, "usage", None),
++            id=getattr(response, "id", None),
++        )
+diff --git a/provider/request_trace.py b/provider/request_trace.py
+new file mode 100644
+index 0000000..92dc413
+--- /dev/null
++++ b/provider/request_trace.py
+@@ -0,0 +1,114 @@
++"""Optional request/response tracing for research API diagnostics.
++
++Tracing is enabled only when ``TSM_LLM_TRACE_DIR`` is set. Each request is
++written before the network call and updated after it, so an interrupted call
++still leaves its complete input on disk. Credentials are never included.
++"""
++
++from __future__ import annotations
++
++import json
++import os
++import threading
++import time
++from pathlib import Path
++from typing import Any
++
++
++_lock = threading.Lock()
++_sequence = 0
++
++
++def _jsonable(value: Any) -> Any:
++    if value is None or isinstance(value, (str, int, float, bool)):
++        return value
++    if isinstance(value, dict):
++        return {str(k): _jsonable(v) for k, v in value.items()}
++    if isinstance(value, (list, tuple)):
++        return [_jsonable(v) for v in value]
++    if hasattr(value, "model_dump"):
++        try:
++            return _jsonable(value.model_dump())
++        except Exception:
++            pass
++    if hasattr(value, "__dict__"):
++        try:
++            return _jsonable(vars(value))
++        except Exception:
++            pass
++    return str(value)
++
++
++def _write(path: Path, payload: dict[str, Any]) -> None:
++    path.write_text(
++        json.dumps(_jsonable(payload), ensure_ascii=False, indent=2, default=str),
++        encoding="utf-8",
++    )
++
++
++class RequestTrace:
++    def __init__(self, path: Path | None, base_payload: dict[str, Any] | None = None):
++        self.path = path
++        self.base_payload = base_payload or {}
++        self.started = time.time()
++
++    @property
++    def enabled(self) -> bool:
++        return self.path is not None
++
++    def finish(self, payload: dict[str, Any]) -> None:
++        if self.path is None:
++            return
++        payload = {
++            **self.base_payload,
++            **payload,
++            "status": "completed",
++            "elapsed_seconds": round(time.time() - self.started, 4),
++        }
++        _write(self.path, payload)
++
++    def fail(self, error: BaseException, payload: dict[str, Any] | None = None) -> None:
++        if self.path is None:
++            return
++        _write(
++            self.path,
++            {
++                **self.base_payload,
++                **(payload or {}),
++                "status": "error",
++                "elapsed_seconds": round(time.time() - self.started, 4),
++                "error_type": type(error).__name__,
++                "error": str(error),
++            },
++        )
++
++
++def start_request(kind: str, payload: dict[str, Any]) -> RequestTrace:
++    root_value = os.getenv("TSM_LLM_TRACE_DIR", "").strip()
++    if not root_value:
++        return RequestTrace(None)
++
++    root = Path(root_value)
++    root.mkdir(parents=True, exist_ok=True)
++    global _sequence
++    with _lock:
++        _sequence += 1
++        sequence = _sequence
++    safe_kind = "".join(ch if ch.isalnum() or ch in "_-" else "_" for ch in kind)
++    path = root / f"{sequence:06d}_{safe_kind}.json"
++    trace = RequestTrace(path, payload)
++    _write(
++        path,
++        {
++            **payload,
++            "status": "pending",
++            "started_at_unix": trace.started,
++            "trace_kind": kind,
++        },
++    )
++    return trace
++
++
++def jsonable(value: Any) -> Any:
++    """Expose the safe serializer to provider adapters."""
++    return _jsonable(value)

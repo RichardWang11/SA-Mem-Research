@@ -1,0 +1,172 @@
+{
+  "conv-26": {
+    "item_index": 0,
+    "cache": "/workspace/research/tsm_temporal_first/runs/siliconflow_qwen_full_tmux_20261021/cache/locomo10/20261021/item_0_all_sessions",
+    "tree_leaf_count": 34,
+    "text_edge_count": 205,
+    "graphiti_text_edges_present_in_dense_tree": 34,
+    "graphiti_to_dense_tree_coverage": 0.16585365853658537,
+    "required_files": {
+      "tree.json": true,
+      "graph.json": true,
+      "index.json": true,
+      "appearance_count.json": true,
+      "text_edge_mapping.json": true,
+      "snapshots.json": true,
+      "dense_index.faiss": true
+    }
+  },
+  "conv-30": {
+    "item_index": 1,
+    "cache": "/workspace/research/tsm_temporal_first/runs/siliconflow_qwen_full_tmux_20261021/cache/locomo10/20261021/item_1_all_sessions",
+    "tree_leaf_count": 23,
+    "text_edge_count": 181,
+    "graphiti_text_edges_present_in_dense_tree": 23,
+    "graphiti_to_dense_tree_coverage": 0.1270718232044199,
+    "required_files": {
+      "tree.json": true,
+      "graph.json": true,
+      "index.json": true,
+      "appearance_count.json": true,
+      "text_edge_mapping.json": true,
+      "snapshots.json": true,
+      "dense_index.faiss": true
+    }
+  },
+  "conv-41": {
+    "item_index": 2,
+    "cache": "/workspace/research/tsm_temporal_first/runs/siliconflow_qwen_full_tmux_20261021/cache/locomo10/20261021/item_2_all_sessions",
+    "tree_leaf_count": 35,
+    "text_edge_count": 323,
+    "graphiti_text_edges_present_in_dense_tree": 35,
+    "graphiti_to_dense_tree_coverage": 0.10835913312693499,
+    "required_files": {
+      "tree.json": true,
+      "graph.json": true,
+      "index.json": true,
+      "appearance_count.json": true,
+      "text_edge_mapping.json": true,
+      "snapshots.json": true,
+      "dense_index.faiss": true
+    }
+  },
+  "conv-42": {
+    "item_index": 3,
+    "cache": "/workspace/research/tsm_temporal_first/runs/siliconflow_qwen_full_tmux_20261021/cache/locomo10/20261021/item_3_all_sessions",
+    "tree_leaf_count": 26,
+    "text_edge_count": 306,
+    "graphiti_text_edges_present_in_dense_tree": 26,
+    "graphiti_to_dense_tree_coverage": 0.08496732026143791,
+    "required_files": {
+      "tree.json": true,
+      "graph.json": true,
+      "index.json": true,
+      "appearance_count.json": true,
+      "text_edge_mapping.json": true,
+      "snapshots.json": true,
+      "dense_index.faiss": true
+    }
+  },
+  "conv-43": {
+    "item_index": 4,
+    "cache": "/workspace/research/tsm_temporal_first/runs/siliconflow_qwen_full_tmux_20261021/cache/locomo10/20261021/item_4_all_sessions",
+    "tree_leaf_count": 32,
+    "text_edge_count": 331,
+    "graphiti_text_edges_present_in_dense_tree": 32,
+    "graphiti_to_dense_tree_coverage": 0.09667673716012085,
+    "required_files": {
+      "tree.json": true,
+      "graph.json": true,
+      "index.json": true,
+      "appearance_count.json": true,
+      "text_edge_mapping.json": true,
+      "snapshots.json": true,
+      "dense_index.faiss": true
+    }
+  },
+  "conv-44": {
+    "item_index": 5,
+    "cache": "/workspace/research/tsm_temporal_first/runs/siliconflow_qwen_full_tmux_20261021/cache/locomo10/20261021/item_5_all_sessions",
+    "tree_leaf_count": 44,
+    "text_edge_count": 332,
+    "graphiti_text_edges_present_in_dense_tree": 44,
+    "graphiti_to_dense_tree_coverage": 0.13253012048192772,
+    "required_files": {
+      "tree.json": true,
+      "graph.json": true,
+      "index.json": true,
+      "appearance_count.json": true,
+      "text_edge_mapping.json": true,
+      "snapshots.json": true,
+      "dense_index.faiss": true
+    }
+  },
+  "conv-47": {
+    "item_index": 6,
+    "cache": "/workspace/research/tsm_temporal_first/runs/siliconflow_qwen_full_tmux_20261021/cache/locomo10/20261021/item_6_all_sessions",
+    "tree_leaf_count": 25,
+    "text_edge_count": 334,
+    "graphiti_text_edges_present_in_dense_tree": 25,
+    "graphiti_to_dense_tree_coverage": 0.0748502994011976,
+    "required_files": {
+      "tree.json": true,
+      "graph.json": true,
+      "index.json": true,
+      "appearance_count.json": true,
+      "text_edge_mapping.json": true,
+      "snapshots.json": true,
+      "dense_index.faiss": true
+    }
+  },
+  "conv-48": {
+    "item_index": 7,
+    "cache": "/workspace/research/tsm_temporal_first/runs/siliconflow_qwen_full_tmux_20261021/cache/locomo10/20261021/item_7_all_sessions",
+    "tree_leaf_count": 38,
+    "text_edge_count": 334,
+    "graphiti_text_edges_present_in_dense_tree": 38,
+    "graphiti_to_dense_tree_coverage": 0.11377245508982035,
+    "required_files": {
+      "tree.json": true,
+      "graph.json": true,
+      "index.json": true,
+      "appearance_count.json": true,
+      "text_edge_mapping.json": true,
+      "snapshots.json": true,
+      "dense_index.faiss": true
+    }
+  },
+  "conv-49": {
+    "item_index": 8,
+    "cache": "/workspace/research/tsm_temporal_first/runs/siliconflow_qwen_full_tmux_20261021/cache/locomo10/20261021/item_8_all_sessions",
+    "tree_leaf_count": 24,
+    "text_edge_count": 249,
+    "graphiti_text_edges_present_in_dense_tree": 24,
+    "graphiti_to_dense_tree_coverage": 0.0963855421686747,
+    "required_files": {
+      "tree.json": true,
+      "graph.json": true,
+      "index.json": true,
+      "appearance_count.json": true,
+      "text_edge_mapping.json": true,
+      "snapshots.json": true,
+      "dense_index.faiss": true
+    }
+  },
+  "conv-50": {
+    "item_index": 9,
+    "cache": "/workspace/research/tsm_temporal_first/runs/siliconflow_qwen_full_tmux_20261021/cache/locomo10/20261021/item_9_all_sessions",
+    "tree_leaf_count": 36,
+    "text_edge_count": 276,
+    "graphiti_text_edges_present_in_dense_tree": 36,
+    "graphiti_to_dense_tree_coverage": 0.13043478260869565,
+    "required_files": {
+      "tree.json": true,
+      "graph.json": true,
+      "index.json": true,
+      "appearance_count.json": true,
+      "text_edge_mapping.json": true,
+      "snapshots.json": true,
+      "dense_index.faiss": true
+    }
+  }
+}

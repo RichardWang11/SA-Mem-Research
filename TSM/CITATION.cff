@@ -1,0 +1,79 @@
+cff-version: 1.2.0
+message: "If you use TSM, please cite this software and the associated paper when available."
+title: "TSM: Temporal Semantic Memory"
+type: software
+version: 0.1.1
+date-released: 2026-09-01
+license: MIT
+authors:
+  - given-names: "Miao"
+    family-names: "Su"
+  - given-names: "Yucan"
+    family-names: "Guo"
+  - given-names: "Zhongni"
+    family-names: "Hou"
+  - given-names: "Long"
+    family-names: "Bai"
+  - given-names: "Zixuan"
+    family-names: "Li"
+  - given-names: "Yufei"
+    family-names: "Zhang"
+  - given-names: "Guojun"
+    family-names: "Yin"
+  - given-names: "Wei"
+    family-names: "Lin"
+  - given-names: "Xiaolong"
+    family-names: "Jin"
+  - given-names: "Jiafeng"
+    family-names: "Guo"
+  - given-names: "Xueqi"
+    family-names: "Cheng"
+repository-code: "https://github.com/cosmicexotic/TSM"
+url: "https://aclanthology.org/2026.findings-acl.1496/"
+keywords:
+  - temporal memory
+  - retrieval-augmented generation
+  - long-term conversational memory
+  - graph retrieval
+references:
+  - type: software
+    title: "E-2GraphRAG"
+    authors:
+      - given-names: "Yibo"
+        family-names: "Zhao"
+    repository-code: "https://github.com/YiboZhao624/E-2GraphRAG"
+preferred-citation:
+  type: conference-paper
+  title: "Beyond Dialogue Time: Temporal Semantic Memory for Personalized LLM Agents"
+  authors:
+    - given-names: "Miao"
+      family-names: "Su"
+    - given-names: "Yucan"
+      family-names: "Guo"
+    - given-names: "Zhongni"
+      family-names: "Hou"
+    - given-names: "Long"
+      family-names: "Bai"
+    - given-names: "Zixuan"
+      family-names: "Li"
+    - given-names: "Yufei"
+      family-names: "Zhang"
+    - given-names: "Guojun"
+      family-names: "Yin"
+    - given-names: "Wei"
+      family-names: "Lin"
+    - given-names: "Xiaolong"
+      family-names: "Jin"
+    - given-names: "Jiafeng"
+      family-names: "Guo"
+    - given-names: "Xueqi"
+      family-names: "Cheng"
+  collection-title: "Findings of the Association for Computational Linguistics: ACL 2026"
+  publisher:
+    name: "Association for Computational Linguistics"
+  year: 2026
+  month: 7
+  start: 29935
+  end: 29951
+  doi: "10.18653/v1/2026.findings-acl.1496"
+  url: "https://aclanthology.org/2026.findings-acl.1496/"

@@ -1,0 +1,11 @@
+{
+  "annotation_locomo_rows": 1986,
+  "annotation_explicit_rows": 321,
+  "result_rows": 321,
+  "result_unique_qids": 321,
+  "missing_result_qids": [],
+  "extra_result_qids": [],
+  "main_subset": 244,
+  "adversarial_subset": 77,
+  "annotation_tsm_active": 269
+}

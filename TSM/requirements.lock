@@ -1,0 +1,19 @@
+# Direct dependency lock for the Python 3.11 reference environment.
+numpy==1.26.4
+PyYAML==6.0.2
+tqdm==4.67.1
+faiss-cpu==1.9.0.post1
+neo4j==5.28.1
+graphiti-core==0.19.0
+networkx==3.2.1
+openai==2.24.0
+httpx==0.28.1
+scikit-learn==1.6.1
+spacy==3.8.4
+click==8.3.0
+nest-asyncio==1.6.0
+python-dateutil==2.9.0.post0
+dateparser==1.4.0
+umap-learn==0.5.7
+tiktoken==0.12.0
+pytest==9.0.3

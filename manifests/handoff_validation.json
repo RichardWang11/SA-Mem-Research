@@ -1,0 +1,24 @@
+{
+  "python_syntax_files": 56,
+  "query_selection_exact_match": true,
+  "query_count": 321,
+  "main_subset": 244,
+  "adversarial": 77,
+  "scoring_summary_reproduced_identically": true,
+  "smoke_archive_check": "passed; 4300 traces, 1 recovered application error; quality acceptance remains false",
+  "candidate_rank_projection": "31 -> 6 reproduced; QA rescue not measured",
+  "official_source_plus_patch": "reproduces all 76 copied source-file hashes",
+  "launch_dry_run": "official batch8/full321; historical batch1/smoke1 verified",
+  "paid_api_calls_during_packaging": 0,
+  "new_live_build_executed": false,
+  "fresh_environment_install_verified": false,
+  "remote_push_performed": false,
+  "portable_full_audit_reproduced": {
+    "queries": 321,
+    "main": 244,
+    "adversarial": 77,
+    "trace_files": 52352,
+    "mapping_counts_match_original": true
+  },
+  "validation_phase": "Local packaging validation before publication; remote_push_performed records that phase only."
+}

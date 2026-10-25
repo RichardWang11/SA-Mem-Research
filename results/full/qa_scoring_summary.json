@@ -1,0 +1,175 @@
+{
+  "evaluator_repository": "https://github.com/snap-research/locomo",
+  "evaluator_commit": "3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376",
+  "evaluator_sha256": "8e3be5d57ff2ff9ec5cd05939592f468c5f3f1fd95d13e431932bdf6bf0fd6fd",
+  "result_sha256": "9bcea70370625ed0766356562439eef9acfcbbacf67906c51b5b7e16e511b2c0",
+  "execution": "Unchanged upstream QA function AST executed; unused BERTScore imports excluded. Full original generated answers scored without answer extraction.",
+  "metrics_scope": "Main: category-specific lexical F1. Adversarial: upstream refusal-phrase heuristic. No semantic judge accuracy; no retrieval recall derived from evaluator.",
+  "overall_mixed_not_accuracy": {
+    "n": 321,
+    "upstream_qa_score": 0.05051294846249351,
+    "diagnostic_exact_match": 0.0,
+    "diagnostic_token_f1": 0.019320724936254575,
+    "mean_prediction_words": 131.8753894080997,
+    "parser_hit": 269,
+    "tkg_chunk_match": 57
+  },
+  "main": {
+    "n": 244,
+    "upstream_qa_score": 0.029568264165821378,
+    "diagnostic_exact_match": 0.0,
+    "diagnostic_token_f1": 0.025417838953023436,
+    "mean_prediction_words": 127.38934426229508,
+    "parser_hit": 202,
+    "tkg_chunk_match": 44
+  },
+  "adversarial": {
+    "n": 77,
+    "upstream_qa_score": 0.11688311688311688,
+    "diagnostic_exact_match": 0.0,
+    "diagnostic_token_f1": 0.0,
+    "mean_prediction_words": 146.0909090909091,
+    "parser_hit": 67,
+    "tkg_chunk_match": 13
+  },
+  "by_category": {
+    "1": {
+      "n": 15,
+      "upstream_qa_score": 0.09113836780503447,
+      "diagnostic_exact_match": 0.0,
+      "diagnostic_token_f1": 0.026733811676663295,
+      "mean_prediction_words": 117.26666666666667,
+      "parser_hit": 13,
+      "tkg_chunk_match": 8
+    },
+    "2": {
+      "n": 44,
+      "upstream_qa_score": 0.01648658651760486,
+      "diagnostic_exact_match": 0.0,
+      "diagnostic_token_f1": 0.017352108843679347,
+      "mean_prediction_words": 158.8181818181818,
+      "parser_hit": 36,
+      "tkg_chunk_match": 6
+    },
+    "3": {
+      "n": 9,
+      "upstream_qa_score": 0.0101368260579443,
+      "diagnostic_exact_match": 0.0,
+      "diagnostic_token_f1": 0.017516040458031568,
+      "mean_prediction_words": 110.33333333333333,
+      "parser_hit": 6,
+      "tkg_chunk_match": 1
+    },
+    "4": {
+      "n": 176,
+      "upstream_qa_score": 0.028584884648231737,
+      "diagnostic_exact_match": 0.0,
+      "diagnostic_token_f1": 0.027726183955361326,
+      "mean_prediction_words": 121.26704545454545,
+      "parser_hit": 147,
+      "tkg_chunk_match": 29
+    },
+    "5": {
+      "n": 77,
+      "upstream_qa_score": 0.11688311688311688,
+      "diagnostic_exact_match": 0.0,
+      "diagnostic_token_f1": 0.0,
+      "mean_prediction_words": 146.0909090909091,
+      "parser_hit": 67,
+      "tkg_chunk_match": 13
+    }
+  },
+  "by_conversation": {
+    "conv-26": {
+      "n": 12,
+      "upstream_qa_score": 0.028695855531646764,
+      "diagnostic_exact_match": 0.0,
+      "diagnostic_token_f1": 0.03023187805940436,
+      "mean_prediction_words": 137.08333333333334,
+      "parser_hit": 10,
+      "tkg_chunk_match": 2
+    },
+    "conv-30": {
+      "n": 4,
+      "upstream_qa_score": 0.03409090909090909,
+      "diagnostic_exact_match": 0.0,
+      "diagnostic_token_f1": 0.03695652173913044,
+      "mean_prediction_words": 85.5,
+      "parser_hit": 2,
+      "tkg_chunk_match": 0
+    },
+    "conv-41": {
+      "n": 33,
+      "upstream_qa_score": 0.019767428193376763,
+      "diagnostic_exact_match": 0.0,
+      "diagnostic_token_f1": 0.015556882299178456,
+      "mean_prediction_words": 108.75757575757575,
+      "parser_hit": 26,
+      "tkg_chunk_match": 2
+    },
+    "conv-42": {
+      "n": 37,
+      "upstream_qa_score": 0.024825856364244912,
+      "diagnostic_exact_match": 0.0,
+      "diagnostic_token_f1": 0.02828651058865284,
+      "mean_prediction_words": 131.0,
+      "parser_hit": 33,
+      "tkg_chunk_match": 7
+    },
+    "conv-43": {
+      "n": 28,
+      "upstream_qa_score": 0.03696844465769162,
+      "diagnostic_exact_match": 0.0,
+      "diagnostic_token_f1": 0.028466539464182965,
+      "mean_prediction_words": 134.32142857142858,
+      "parser_hit": 22,
+      "tkg_chunk_match": 3
+    },
+    "conv-44": {
+      "n": 16,
+      "upstream_qa_score": 0.010707897595024081,
+      "diagnostic_exact_match": 0.0,
+      "diagnostic_token_f1": 0.01169635192792362,
+      "mean_prediction_words": 172.5625,
+      "parser_hit": 15,
+      "tkg_chunk_match": 3
+    },
+    "conv-47": {
+      "n": 29,
+      "upstream_qa_score": 0.0236664442547871,
+      "diagnostic_exact_match": 0.0,
+      "diagnostic_token_f1": 0.01738978522693754,
+      "mean_prediction_words": 106.17241379310344,
+      "parser_hit": 27,
+      "tkg_chunk_match": 4
+    },
+    "conv-48": {
+      "n": 27,
+      "upstream_qa_score": 0.026236837835195034,
+      "diagnostic_exact_match": 0.0,
+      "diagnostic_token_f1": 0.026308339752665687,
+      "mean_prediction_words": 137.11111111111111,
+      "parser_hit": 24,
+      "tkg_chunk_match": 9
+    },
+    "conv-49": {
+      "n": 31,
+      "upstream_qa_score": 0.03255570994966895,
+      "diagnostic_exact_match": 0.0,
+      "diagnostic_token_f1": 0.020891051170264737,
+      "mean_prediction_words": 118.90322580645162,
+      "parser_hit": 24,
+      "tkg_chunk_match": 7
+    },
+    "conv-50": {
+      "n": 27,
+      "upstream_qa_score": 0.05750627453866459,
+      "diagnostic_exact_match": 0.0,
+      "diagnostic_token_f1": 0.04758925208111222,
+      "mean_prediction_words": 135.96296296296296,
+      "parser_hit": 19,
+      "tkg_chunk_match": 7
+    }
+  },
+  "adversarial_heuristic_pass_count": 9
+}
