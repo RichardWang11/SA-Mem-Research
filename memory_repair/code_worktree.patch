@@ -1,0 +1,352 @@
+diff --git a/graphiti_extractor.py b/graphiti_extractor.py
+index 06377e1..a39489f 100644
+--- a/graphiti_extractor.py
++++ b/graphiti_extractor.py
+@@ -33,6 +33,170 @@ try:
+     from graphiti_core.llm_client.openai_client import OpenAIClient
+     from graphiti_core.nodes import EpisodeType
+     from graphiti_core.utils.bulk_utils import RawEpisode
++    from openai.resources.responses.responses import _type_to_text_format_param
++    from provider.chat_completions_graphiti_client import ChatCompletionsGraphitiClient
++    from provider.request_trace import jsonable, start_request
++
++    class _TraceGraphitiMixin:
++        async def _create_structured_completion(
++            self,
++            model,
++            messages,
++            temperature,
++            max_tokens,
++            response_model,
++            reasoning=None,
++            verbosity=None,
++        ):
++            trace = start_request(
++                "graphiti_structured",
++                {
++                    "stage": "graphiti",
++                    "endpoint": getattr(getattr(self, "config", None), "base_url", None),
++                    "model": model,
++                    "request": {
++                        "messages": jsonable(messages),
++                        "temperature": temperature,
++                        "max_output_tokens": max_tokens,
++                        "response_model": getattr(response_model, "__name__", str(response_model)),
++                        "reasoning": reasoning,
++                        "verbosity": verbosity,
++                    },
++                },
++            )
++            trace_written = False
++            try:
++                response = await super()._create_structured_completion(
++                    model=model,
++                    messages=messages,
++                    temperature=temperature,
++                    max_tokens=max_tokens,
++                    response_model=response_model,
++                    reasoning=reasoning,
++                    verbosity=verbosity,
++                )
++                saved_response = {
++                    "status": getattr(response, "status", None),
++                    "incomplete_details": jsonable(
++                        getattr(response, "incomplete_details", None)
++                    ),
++                    "output_text": getattr(response, "output_text", None),
++                    "usage": jsonable(getattr(response, "usage", None)),
++                    "id": getattr(response, "id", None),
++                }
++
++                # Chat Completions returns the raw text before TSM's base
++                # client calls json.loads(). Validate here so malformed or
++                # truncated output is saved together with the raw response.
++                parsed_output = json.loads(saved_response.get("output_text") or "")
++                response_model.model_validate(parsed_output)
++
++                trace.finish({"response": saved_response})
++                trace_written = True
++                return response
++            except Exception as exc:
++                if not trace_written:
++                    payload = locals().get("saved_response")
++                    trace.fail(
++                        exc,
++                        {
++                            "response": payload,
++                            "parse_stage": "local_structured_validation"
++                            if payload is not None
++                            else "request",
++                        },
++                    )
++                    trace_written = True
++                raise
++
++    class TraceOpenAIClient(OpenAIClient):
++        """Responses client that preserves raw output when parsing fails.
++
++        ``AsyncResponses.parse`` applies its Pydantic parser inside the SDK
++        before returning the response object. When that parser sees truncated
++        JSON, the normal TSM trace only receives the validation exception and
++        loses the raw output, usage, and incomplete metadata. Use the same
++        Responses request through ``create`` and validate locally so the raw
++        response can be saved before re-raising the same kind of error.
++        """
++
++        async def _create_structured_completion(
++            self,
++            model,
++            messages,
++            temperature,
++            max_tokens,
++            response_model,
++            reasoning=None,
++            verbosity=None,
++        ):
++            trace = start_request(
++                "graphiti_structured",
++                {
++                    "stage": "graphiti",
++                    "endpoint": getattr(getattr(self, "config", None), "base_url", None),
++                    "model": model,
++                    "request": {
++                        "messages": jsonable(messages),
++                        "temperature": temperature,
++                        "max_output_tokens": max_tokens,
++                        "response_model": getattr(response_model, "__name__", str(response_model)),
++                        "reasoning": reasoning,
++                        "verbosity": verbosity,
++                    },
++                },
++            )
++            trace_written = False
++
++            def response_payload(response):
++                return {
++                    "status": getattr(response, "status", None),
++                    "incomplete_details": jsonable(
++                        getattr(response, "incomplete_details", None)
++                    ),
++                    "output_text": getattr(response, "output_text", None),
++                    "usage": jsonable(getattr(response, "usage", None)),
++                    "id": getattr(response, "id", None),
++                }
++
++            try:
++                response = await self.client.responses.create(
++                    model=model,
++                    input=messages,
++                    temperature=temperature,
++                    max_output_tokens=max_tokens,
++                    text={"format": _type_to_text_format_param(response_model)},
++                    reasoning={"effort": reasoning} if reasoning is not None else None,
++                )
++                saved_response = response_payload(response)
++
++                # Validate before returning. BaseOpenAIClient will parse the
++                # same JSON again, while this first pass ensures that failures
++                # retain the raw text and provider metadata in the trace.
++                raw_output = saved_response.get("output_text") or ""
++                parsed_output = json.loads(raw_output)
++                response_model.model_validate(parsed_output)
++
++                trace.finish({"response": saved_response})
++                trace_written = True
++                return response
++            except Exception as exc:
++                if not trace_written:
++                    payload = locals().get("saved_response")
++                    trace.fail(
++                        exc,
++                        {
++                            "response": payload,
++                            "parse_stage": "local_structured_validation"
++                            if payload is not None
++                            else "request",
++                        },
++                    )
++                    trace_written = True
++                raise
++
++    class TraceChatCompletionsGraphitiClient(_TraceGraphitiMixin, ChatCompletionsGraphitiClient):
++        pass
+ 
+     GRAPHITI_AVAILABLE = True
+ except ImportError:
+@@ -118,7 +282,12 @@ class GraphitiExtractor:
+         # graphiti-core defaults to sending reasoning.effort/verbosity. The
+         # configured gpt-4o-mini-compatible RelayRouter endpoint rejects those
+         # optional fields, while the TSM config already fixes temperature=0.
+-        llm_client = OpenAIClient(
++        client_class = (
++            TraceChatCompletionsGraphitiClient
++            if self.llm_api_config.get("api_protocol") == "chat_completions"
++            else TraceOpenAIClient
++        )
++        llm_client = client_class(
+             config=llm_config,
+             cache=False,
+             max_tokens=graphiti_max_tokens,
+diff --git a/main_time.py b/main_time.py
+index 04016f5..4f352b3 100644
+--- a/main_time.py
++++ b/main_time.py
+@@ -282,7 +282,7 @@ def get_llm_api_config(configs):
+     llm_parallel = configs.get("llm_parallel", {})
+     logical_model = llm_config.get("api_model", llm_config.get("model", "gpt-4o-mini"))
+     backend_model = llm_config.get("backend_model", logical_model)
+-    return {
++    resolved = {
+         "type": "openai_compatible",
+         "model": logical_model,
+         "backend_model": backend_model,
+@@ -293,6 +293,13 @@ def get_llm_api_config(configs):
+         "max_retries": llm_parallel.get("llm_retry_count", 3),
+         "timeout": llm_parallel.get("llm_timeout", 120),
+     }
++    # Graphiti has a separate structured-output budget. Preserve the optional
++    # override instead of silently dropping it during config normalization.
++    if "graphiti_max_tokens" in llm_config:
++        resolved["graphiti_max_tokens"] = llm_config["graphiti_max_tokens"]
++    if "api_protocol" in llm_config:
++        resolved["api_protocol"] = llm_config["api_protocol"]
++    return resolved
+ 
+ def load_llm(configs):
+     # 统一返回MT API配置
+diff --git a/provider/public_embedder.py b/provider/public_embedder.py
+index 81b3697..c906838 100644
+--- a/provider/public_embedder.py
++++ b/provider/public_embedder.py
+@@ -11,6 +11,8 @@ from typing import Any
+ 
+ from openai import AsyncOpenAI
+ 
++from .request_trace import jsonable, start_request
++
+ try:
+     from graphiti_core.embedder.client import EmbedderClient
+ except ImportError:  # keeps the offline smoke independent of Graphiti/Neo4j
+@@ -101,15 +103,59 @@ class PublicEmbedder(EmbedderClient):
+         if self.backend == "hash":
+             return self._hash_embedding(text)
+         assert self.client is not None
+-        response = await self.client.embeddings.create(input=input_data, model=self.model)
+-        return response.data[0].embedding[: self.dimension]
++        trace = start_request(
++            "embedding",
++            {
++                "stage": "embedding",
++                "endpoint": self.base_url,
++                "model": self.model,
++                "request": {"input": jsonable(input_data)},
++            },
++        )
++        try:
++            response = await self.client.embeddings.create(input=input_data, model=self.model)
++            trace.finish(
++                {
++                    "response": {
++                        "count": len(response.data),
++                        "dimension": len(response.data[0].embedding) if response.data else 0,
++                        "usage": jsonable(getattr(response, "usage", None)),
++                    }
++                }
++            )
++            return response.data[0].embedding[: self.dimension]
++        except Exception as exc:
++            trace.fail(exc)
++            raise
+ 
+     async def create_batch(self, input_data_list: list[str]) -> list[list[float]]:
+         if self.backend == "hash":
+             return [self._hash_embedding(text) for text in input_data_list]
+         assert self.client is not None
+-        response = await self.client.embeddings.create(input=input_data_list, model=self.model)
+-        return [item.embedding[: self.dimension] for item in response.data]
++        trace = start_request(
++            "embedding",
++            {
++                "stage": "embedding",
++                "endpoint": self.base_url,
++                "model": self.model,
++                "request": {"input": jsonable(input_data_list)},
++            },
++        )
++        try:
++            response = await self.client.embeddings.create(input=input_data_list, model=self.model)
++            trace.finish(
++                {
++                    "response": {
++                        "count": len(response.data),
++                        "dimension": len(response.data[0].embedding) if response.data else 0,
++                        "usage": jsonable(getattr(response, "usage", None)),
++                    }
++                }
++            )
++            return [item.embedding[: self.dimension] for item in response.data]
++        except Exception as exc:
++            trace.fail(exc)
++            raise
+ 
+     async def embed_texts(self, texts: list[str]) -> list[list[float]]:
+         return await self.create_batch(texts)
+diff --git a/provider/public_llm_provider.py b/provider/public_llm_provider.py
+index 27874b4..d93a375 100644
+--- a/provider/public_llm_provider.py
++++ b/provider/public_llm_provider.py
+@@ -9,6 +9,7 @@ from typing import Any
+ from openai import OpenAI
+ 
+ from .base_provider import BaseLLMProvider
++from .request_trace import jsonable, start_request
+ 
+ 
+ DEFAULT_BASE_URL = "https://api.openai.com/v1"
+@@ -80,15 +81,45 @@ class OpenAICompatibleProvider(BaseLLMProvider):
+             params["tool_choice"] = tool_choice
+         params.update(kwargs)
+ 
++        trace = start_request(
++            "tsm_chat_completion",
++            {
++                "stage": op_type or "unspecified",
++                "endpoint": self.base_url,
++                "model": model,
++                "request": {
++                    "messages": jsonable(messages),
++                    "max_tokens": max_tokens,
++                    "stream": stream,
++                    "has_tools": tools is not None,
++                    "tool_choice": jsonable(tool_choice),
++                    "extra": jsonable(kwargs),
++                },
++            },
++        )
++
+         last_error: Exception | None = None
+         for attempt in range(self.retry):
+             try:
+-                return self.client.chat.completions.create(**params)
++                response = self.client.chat.completions.create(**params)
++                trace.finish(
++                    {
++                        "attempt": attempt + 1,
++                        "response": {
++                            "id": getattr(response, "id", None),
++                            "model": getattr(response, "model", None),
++                            "choices": jsonable(getattr(response, "choices", None)),
++                            "usage": jsonable(getattr(response, "usage", None)),
++                        },
++                    }
++                )
++                return response
+             except Exception as exc:  # the OpenAI SDK exposes provider-specific subclasses
+                 last_error = exc
+                 if attempt + 1 < self.retry:
+                     time.sleep(self.retry_interval * (attempt + 1))
+         assert last_error is not None
++        trace.fail(last_error, {"attempts": self.retry})
+         raise last_error
+ 
+ 

@@ -1,0 +1,538 @@
+diff --git a/build_tree_clustering_time.py b/build_tree_clustering_time.py
+index 06f9b78..443891c 100644
+--- a/build_tree_clustering_time.py
++++ b/build_tree_clustering_time.py
+@@ -963,6 +963,12 @@ def build_tree_with_clustering(
+     """
+     start_time = time.time()
+ 
++    # Keep the complete source corpus separate from the per-window working set.
++    # The original implementation reassigns ``text_chunks`` inside every
++    # temporal window.  That is useful for window-local clustering, but it
++    # must not become the source of truth for the final dense tree.
++    source_text_chunks = list(text_chunks)
++
+     # 检查缓存
+     tree_path = os.path.join(cache_folder, "tree.json")
+     index_path = os.path.join(cache_folder, "cluster_index.json")
+@@ -1038,6 +1044,23 @@ def build_tree_with_clustering(
+     all_caches = {} if not snapshots_only else (existing_cache_tree or {})
+     all_cluster_indices = {} if not snapshots_only else (existing_cluster_index or {})
+ 
++    # Stable source-to-leaf identity.  Leaf IDs must be global across all
++    # monthly windows; otherwise ``all_caches.update(cache)`` silently
++    # overwrites leaves from earlier windows.
++    episode_uuid_to_leaf: Dict[str, str] = {}
++    source_leaf_texts: Dict[str, str] = {}
++    source_content_to_leaf: Dict[str, str] = {}
++    for i, chunk_content in enumerate(source_text_chunks):
++        leaf_id = f"leaf_{i}"
++        leaf_text = chunk_content
++        if original_text and i < len(original_text):
++            original_chunk = original_text[i]
++            if isinstance(original_chunk, dict) and "full_text" in original_chunk:
++                leaf_text = original_chunk["full_text"]
++        source_leaf_texts[leaf_id] = leaf_text
++        source_content_to_leaf.setdefault(str(chunk_content).strip(), leaf_id)
++    next_extra_leaf_index = len(source_leaf_texts)
++
+     # 对每个时间窗口生成独立的snapshot
+     for window_idx, time_window in enumerate(time_windows):
+         # 初始化window_start和window_end，避免在创建snapshot时未定义
+@@ -1084,14 +1107,50 @@ def build_tree_with_clustering(
+             f"成功拉取Episodic内容={len(episode_content_map)}"
+         )
+ 
++        # Resolve each window episode to a stable global leaf.  Graphiti
++        # episodes created by TSM are named chunk_<global_index>; use that
++        # identity when available.  The UUID fallback handles compatible
++        # graphs whose episode names do not follow that convention.
++        window_episode_leaf_ids: Dict[str, str] = {}
++        for episode_uuid, entry in episode_content_map.items():
++            name = str(entry.get("name") or "")
++            leaf_id = None
++            if name.startswith("chunk_"):
++                try:
++                    source_index = int(name[len("chunk_"):])
++                    if 0 <= source_index < len(source_text_chunks):
++                        if str(source_text_chunks[source_index]).strip() != (entry.get("content") or "").strip():
++                            raise RuntimeError(f"Episode/source mismatch: {name} ({episode_uuid})")
++                        leaf_id = f"leaf_{source_index}"
++                except ValueError:
++                    pass
++            if leaf_id is None:
++                leaf_id = episode_uuid_to_leaf.get(episode_uuid)
++            if leaf_id is None:
++                leaf_id = source_content_to_leaf.get((entry.get("content") or "").strip())
++            if leaf_id is None:
++                leaf_id = f"leaf_{next_extra_leaf_index}"
++                next_extra_leaf_index += 1
++            episode_uuid_to_leaf[episode_uuid] = leaf_id
++            window_episode_leaf_ids[episode_uuid] = leaf_id
++
++            # Preserve a source text for compatible graphs without a
++            # chunk_<index> name.  For normal TSM episodes the source text is
++            # already populated above from the original input.
++            if leaf_id not in source_leaf_texts:
++                source_leaf_texts[leaf_id] = (entry.get("content") or "").strip()
++            content_key = (entry.get("content") or "").strip()
++            if content_key:
++                source_content_to_leaf.setdefault(content_key, leaf_id)
++
+         # 从episode_content_map中提取所有文本块（用于统计和后续处理）
+-        text_chunks = []
++        window_text_chunks = []
+         for ep_uuid, entry in episode_content_map.items():
+             content = (entry.get("content") or "").strip()
+             if content:
+-                text_chunks.append(content)
++                window_text_chunks.append(content)
+         # 去重（防止不同uuid内容相同）
+-        text_chunks = list(dict.fromkeys(text_chunks))
++        text_chunks = list(dict.fromkeys(window_text_chunks))
+ 
+         # 2. 执行GMM聚类
+         logger.info("执行GMM聚类...")
+@@ -1329,19 +1388,22 @@ def build_tree_with_clustering(
+         # 4. 初始化缓存结构：snapshots_only 复用现有 tree，不再重建/覆盖；tree_only 需要重建 tree
+         cache = (existing_cache_tree or {}) if snapshots_only else {}
+ 
+-        # 收集所有唯一的chunk内容，用于构建叶子节点
++        # 建立窗口内容/episode到稳定leaf的映射。这里不再按窗口局部
++        # enumerate 生成 leaf_0, leaf_1, ...。
+         all_chunks = {}  # episode_name -> content 的映射
+         chunk_id_mapping = {}  # episode_name -> leaf_id 的映射
+ 
+         # snapshots_only 不需要 leaf 映射/leaf 节点重建；tree_only 需要重建
+         text_chunks_to_leaf = {}
+         if not snapshots_only:
+-            for i, chunk_content in enumerate(text_chunks):
+-                text_chunks_to_leaf[chunk_content.strip()] = f"leaf_{i}"
+-            for i, chunk_content in enumerate(text_chunks):
+-                leaf_id = f"leaf_{i}"
+-                episode_name = f"default_episode_{i}"
+-                all_chunks[episode_name] = chunk_content
++            for episode_uuid, entry in episode_content_map.items():
++                content = (entry.get("content") or "").strip()
++                leaf_id = window_episode_leaf_ids.get(episode_uuid)
++                if not content or leaf_id is None:
++                    continue
++                text_chunks_to_leaf.setdefault(content, leaf_id)
++                episode_name = str(entry.get("name") or episode_uuid)
++                all_chunks[episode_name] = content
+                 chunk_id_mapping[episode_name] = leaf_id
+ 
+         # 5. 为每个聚类生成两条并行的一层摘要：persona摘要与实体总结摘要
+@@ -1492,16 +1554,14 @@ def build_tree_with_clustering(
+                     logger.error(traceback.format_exc())
+ 
+         if not snapshots_only:
+-            # 创建所有叶子节点，确保所有text_chunks都有对应的leaf节点
+-            logger.info(f"创建 {len(text_chunks)} 个叶子节点")
+-            for i, chunk_content in enumerate(text_chunks):
+-                leaf_id = f"leaf_{i}"
+-                leaf_text = chunk_content
+-                if original_text and i < len(original_text):
+-                    original_chunk = original_text[i]
+-                    if isinstance(original_chunk, dict) and "full_text" in original_chunk:
+-                        leaf_text = original_chunk["full_text"]
+-                        logger.debug(f"Leaf节点 {i} 使用full_text保存完整的turn")
++            # 仅把当前窗口涉及的episode写入snapshot cache，但使用全局
++            # 稳定leaf ID，避免不同窗口覆盖彼此的数据。
++            logger.info(f"创建窗口叶子节点: {len(window_episode_leaf_ids)}")
++            for episode_uuid, leaf_id in window_episode_leaf_ids.items():
++                leaf_text = source_leaf_texts.get(
++                    leaf_id,
++                    (episode_content_map.get(episode_uuid, {}).get("content") or "").strip(),
++                )
+                 cache[leaf_id] = {
+                     "text": leaf_text,
+                     "children": None,
+@@ -1578,6 +1638,15 @@ def build_tree_with_clustering(
+ 
+     # snapshots_only/tree_only：不覆盖对应的文件
+     if not snapshots_only:
++        # Episodes without a temporal RELATES_TO edge must remain searchable
++        # as raw source chunks.  Add the complete source corpus once after
++        # window processing; this is separate from snapshot-local caches.
++        for leaf_id, leaf_text in source_leaf_texts.items():
++            all_caches.setdefault(leaf_id, {
++                "text": leaf_text,
++                "children": None,
++                "parent": None,
++            })
+         with open(tree_path, "w", encoding="utf-8") as f:
+             json.dump(all_caches, f, ensure_ascii=False, indent=4)
+         with open(index_path, "w", encoding="utf-8") as f:
+diff --git a/docs/DENSE_MEMORY_REPAIR.md b/docs/DENSE_MEMORY_REPAIR.md
+new file mode 100644
+index 0000000..29f04e6
+--- /dev/null
++++ b/docs/DENSE_MEMORY_REPAIR.md
+@@ -0,0 +1,67 @@
++# Stable source identity in temporal tree construction
++
++The v0.1.1 temporal tree builder enumerated window-local episodes as `leaf_0`,
++`leaf_1`, etc. and merged windows using `all_caches.update(cache)`. Leaf IDs
++collided across windows. With `original_text` supplied, the local index also
++selected `original_text[i]` from the global input, so a leaf could contain an
++unrelated early source round.
++
++The repair retains a complete source list, uses Graphiti's global `chunk_N`
++episode name to resolve `leaf_N`, checks its content against the source, and
++uses stable UUID identities for compatible unnamed episodes. Snapshot caches
++contain window members with global IDs. The final tree includes every input
++source, including chunks without a dated fact edge. That last completeness
++invariant is explicit: it restores a full-history dense corpus, so repaired
++results must be labelled as a repaired reproduction rather than unmodified TSM.
++
++No retrieval, temporal parsing, reranking, answer prompt, embedding model,
++vector normalisation, or Top-K rule is changed by this repair.
++
++## Recover an existing run
++
++Use `scripts/repair_dense_memory.py` with the original run config, its cache
++directory containing the ten `item_*_all_sessions` folders, and a fresh output
++directory. Use the previous experiment's `.venv312/bin/python`; it contains
++Python 3.12.3 and the TSM dependencies. Neo4j credentials are selected via the
++config's environment-variable names. The optional `--credentials-file` selects
++the first RelayRouter URL/key pair used by the previous local experiment.
++
++The script first validates ALL source/Neo4j/cache mappings, then rebuilds
++FAISS through the configured embedding API. It rejects malformed, nonfinite,
++or zero vectors rather than silently substituting zero embeddings. Saved
++indexes are read back and compared to all vectors; self retrieval is checked.
++
++It exports the existing Neo4j nodes and relationships including embeddings,
++UUIDs, episode links, and ISO-formatted temporal fields. This is a logical JSON
++export, not a Neo4j physical database dump. It corrects snapshot cache IDs
++using the existing edges' `valid_at` and preserves the generated summaries.
++The graph itself is not re-extracted or modified. The script does not run QA.
++
++## Observed construction repair on 2026-10-25
++
++The completed Qwen/SiliconFlow LoCoMo run has 10 conversations. All 2,871
++source rounds matched the existing Neo4j `chunk_N` episode and cached UUID
++content exactly after whitespace normalisation. The old tree contained 317
++leaves in total. The recovered indexes contain 2,871 nonzero vectors.
++The often quoted 11.3% was the unweighted per-conversation mean; the pooled
++old leaf/source ratio is 317/2871 = 11.04%.
++
++The logical graph export contains 5,447 nodes and 8,490 relationships.
++Re-embedding made 27 requests using `text-embedding-3-small` at dimension 1536,
++with 221,292 reported input tokens. No answer or extraction LLM call was made.
++QA and LLM-J performance have not been remeasured by this construction run.
++
++The source corpus follows the existing LoCoMo loader: adjacent different
++speakers form a round; same-speaker positions are skipped, and a final unpaired
++utterance is omitted. Completeness here means every TSM loader round, not every
++raw dialogue utterance. Each source_mapping.json saves both dialogue IDs.
++
++Regression tests exercise disjoint/overlapping monthly windows, source order
++different from window order, full-text alignment, undated sources, and rejection
++of inconsistent episode contents. Run:
++
++```bash
++.venv312/bin/python -m pytest -q tests/test_time_tree_source_identity.py tests/test_release_contracts.py
++```
++
++Result: 13 tests passed in the existing experiment environment.
+diff --git a/scripts/repair_dense_memory.py b/scripts/repair_dense_memory.py
+new file mode 100644
+index 0000000..fd975d4
+--- /dev/null
++++ b/scripts/repair_dense_memory.py
+@@ -0,0 +1,238 @@
++#!/usr/bin/env python3
++"""Recover source leaves, export the existing TKG, and rebuild FAISS.
++
++Requires the original config and completed cache, a NEW output directory, and
++read access to Neo4j. No graph construction or answer LLM calls are made.
++Embeddings use the configured model and the original unnormalised IndexFlatIP.
++"""
++from __future__ import annotations
++
++import argparse
++import asyncio
++from datetime import datetime, timezone
++import hashlib
++import json
++import os
++from pathlib import Path
++import shutil
++import subprocess
++import sys
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT))
++
++
++def write(path, obj):
++    path.parent.mkdir(parents=True, exist_ok=True)
++    path.write_text(json.dumps(obj, ensure_ascii=False, indent=2, default=serialise) + '\n')
++
++
++def serialise(value):
++    if hasattr(value, 'iso_format'):
++        return value.iso_format()
++    if hasattr(value, 'isoformat'):
++        return value.isoformat()
++    raise TypeError(type(value).__name__)
++
++
++def sha(path):
++    h = hashlib.sha256()
++    with path.open('rb') as f:
++        for block in iter(lambda: f.read(1048576), b''):
++            h.update(block)
++    return h.hexdigest()
++
++
++def source_chunks(piece):
++    chunks = []
++    for session in piece['rounds']:
++        for r in session:
++            user = f"Date: {r.get('date', '')}\nUser: {r['user']['content']}"
++            chunks.append({
++                'user_only_text': user,
++                'full_text': user + '\nAssistant: ' + r['assistant']['content'],
++                'session_id': r['session_id'],
++                'user_dialogue_id': r['user']['dia_id'],
++                'assistant_dialogue_id': r['assistant']['dia_id'],
++            })
++    return chunks
++
++
++async def run(args):
++    import faiss
++    import numpy as np
++    import yaml
++    from neo4j import GraphDatabase
++    from dataloader import locomoLoader
++    from build_dense_index import get_tree_hash, save_dense_index_cache
++    from provider.public_embedder import PublicEmbedder
++
++    config = yaml.safe_load(args.config.read_text())
++    dataset_path = Path(config['dataset']['dataset_path'])
++    loader = locomoLoader(str(dataset_path))
++    args.output.mkdir(parents=True, exist_ok=False)
++    date_tag = datetime.now(timezone.utc).strftime('%Y%m%d')
++    write(args.output / 'status.json', {'stage': 'validating', 'completed': 0})
++    embed_config = config['embedding']
++    if args.credentials_file:
++        # Match the credential selector used by the previous experiment;
++        # never persist credential values or print the file contents.
++        lines = args.credentials_file.read_text().splitlines()
++        if lines[0].strip().rstrip('/') != embed_config['base_url'].rstrip('/'):
++            raise RuntimeError('Credential endpoint differs from configured embedding endpoint')
++        os.environ[embed_config.get('api_key_env', 'OPENAI_API_KEY')] = lines[1].strip()
++    os.environ['TSM_LLM_TRACE_DIR'] = str(args.output / 'request_trace')
++    neo = config['graphiti']['neo4j']
++    driver = GraphDatabase.driver(
++        os.getenv(neo.get('uri_env', 'NEO4J_URI'), neo.get('uri', 'bolt://localhost:7687')),
++        auth=(os.getenv(neo.get('user_env', 'NEO4J_USER'), 'neo4j'),
++              os.environ[neo.get('password_env', 'NEO4J_PASSWORD')]),
++    )
++    database = os.getenv(neo.get('database_env', 'NEO4J_DATABASE'), 'neo4j')
++    counts = []
++    try:
++        for i in range(len(loader)):
++            piece = loader[i]
++            sid = piece['group_id']
++            gid = config['graphiti']['group_id_prefix'] + sid
++            old = args.old_cache / loader.available_ids[i]
++            target = args.output / 'cache' / dataset_path.stem / date_tag / loader.available_ids[i]
++            target.mkdir(parents=True)
++            chunks = source_chunks(piece)
++            tree = {f'leaf_{j}': {'text': r['full_text'], 'children': None, 'parent': None}
++                    for j, r in enumerate(chunks)}
++            with driver.session(database=database) as session:
++                nodes = [dict(r) for r in session.run(
++                    'MATCH (n) WHERE n.group_id=$gid RETURN labels(n) AS labels, properties(n) AS properties', gid=gid)]
++                relationships = [dict(r) for r in session.run(
++                    'MATCH (a)-[r]->(b) WHERE a.group_id=$gid AND b.group_id=$gid '
++                    'RETURN a.uuid AS source, b.uuid AS target, type(r) AS type, properties(r) AS properties', gid=gid)]
++            episodes = [n['properties'] for n in nodes if 'Episodic' in n['labels']]
++            if len(episodes) != len(chunks):
++                raise RuntimeError(f'{sid}: episode/source count mismatch')
++            mapping = json.loads((old / 'text_edge_mapping.json').read_text())
++            provenance = []
++            uuid_to_leaf = {}
++            seen_indices = set()
++            for ep in episodes:
++                name = ep['name']
++                if not name.startswith('chunk_'):
++                    raise RuntimeError(f'{sid}: nonstandard episode name')
++                j = int(name[6:])
++                if not 0 <= j < len(chunks) or j in seen_indices:
++                    raise RuntimeError(f'{sid}: invalid/duplicate source index')
++                seen_indices.add(j)
++                uuid = ep['uuid']
++                source = chunks[j]
++                if ep['content'].strip() != source['user_only_text'].strip():
++                    raise RuntimeError(f'{sid}/{name}: source/Neo4j text mismatch')
++                if uuid not in mapping or mapping[uuid]['text'].strip() != source['user_only_text'].strip():
++                    raise RuntimeError(f'{sid}/{name}: source/cache text mismatch')
++                uuid_to_leaf[uuid] = f'leaf_{j}'
++                provenance.append({'leaf_id': f'leaf_{j}', 'episode_uuid': uuid,
++                                   'episode_name': name, 'global_index': j, **source})
++            write(target / 'tree.json', tree)
++            write(target / 'source_mapping.json', sorted(provenance, key=lambda p: p['global_index']))
++            for filename in ['graph.json', 'index.json', 'appearance_count.json',
++                             'text_edge_mapping.json', 'cluster_index.json']:
++                shutil.copy2(old / filename, target / filename)
++            snapshots = json.loads((old / 'snapshots.json').read_text())
++            for snapshot in snapshots:
++                start = datetime.fromisoformat(snapshot['valid_from'])
++                end = datetime.fromisoformat(snapshot['valid_to'])
++                ids = set()
++                for rel in relationships:
++                    if rel['type'] != 'RELATES_TO':
++                        continue
++                    props = rel['properties']
++                    valid = props.get('valid_at')
++                    if valid is not None and start <= datetime.fromisoformat(serialise(valid)) < end:
++                        ids.update(uuid_to_leaf[u] for u in props.get('episodes', []) if u in uuid_to_leaf)
++                snapshot['cache'] = {k: tree[k] for k in sorted(ids, key=lambda x: int(x[5:]))}
++            write(target / 'snapshots.json', snapshots)
++            export = args.output / 'neo4j_export' / sid
++            write(export / 'nodes.json', nodes)
++            write(export / 'relationships.json', relationships)
++            counts.append({'conversation': sid, 'group_id': gid, 'cache': str(target),
++                           'old_leaf_count': len(json.loads((old / 'tree.json').read_text())),
++                           'source_count': len(chunks), 'episode_count': len(episodes),
++                           'mapping_verified': len(provenance), 'nodes': len(nodes),
++                           'relationships': len(relationships)})
++            print(f'[validated {i+1}/{len(loader)}] {sid}: {len(chunks)} sources, all UUIDs aligned', flush=True)
++    finally:
++        driver.close()
++
++    # All ten provenance checks finish before the first paid embedding call.
++    write(args.output / 'coverage.json', counts)
++    shutil.copy2(dataset_path, args.output / dataset_path.name)
++    query_filter = Path(config['query_filter_path'])
++    shutil.copy2(query_filter, args.output / query_filter.name)
++    embedder = PublicEmbedder.from_config(embed_config)
++    try:
++        for i, item in enumerate(counts):
++            target = Path(item['cache'])
++            tree = json.loads((target / 'tree.json').read_text())
++            ids = list(tree)
++            docs = [tree[k]['text'] for k in ids]
++            vectors = []
++            for offset in range(0, len(docs), embed_config.get('batch_size', 128)):
++                batch = docs[offset:offset + embed_config.get('batch_size', 128)]
++                result = await embedder.embed_texts(batch)
++                if len(result) != len(batch):
++                    raise RuntimeError('Embedding response count mismatch')
++                vectors.extend(result)
++            array = np.ascontiguousarray(vectors, dtype=np.float32)
++            if array.shape != (len(ids), embed_config['dimension']):
++                raise RuntimeError(f'Invalid embedding shape: {array.shape}')
++            if not np.isfinite(array).all() or not (np.linalg.norm(array, axis=1) > 0).all():
++                raise RuntimeError('Nonfinite or zero embedding: refusing index creation')
++            index = faiss.IndexFlatIP(array.shape[1])
++            index.add(array)
++            save_dense_index_cache(str(target), index, ids, get_tree_hash(tree))
++            check = faiss.read_index(str(target / 'dense_index.faiss'))
++            if check.ntotal != len(docs) or not np.array_equal(check.reconstruct_n(0, check.ntotal), array):
++                raise RuntimeError('Saved index readback failed')
++            scores, ranks = check.search(array[:1], min(20, len(ids)))
++            if ranks[0, 0] != 0:
++                raise RuntimeError('Self retrieval smoke failed')
++            item.update({'faiss_docs': check.ntotal, 'dimension': check.d, 'self_search_passed': True})
++            write(args.output / 'status.json', {'stage': 'embedding', 'completed': i+1, 'total': len(counts)})
++            write(args.output / 'coverage.json', counts)
++            print(f'[indexed {i+1}/{len(counts)}] {item["conversation"]}: {check.ntotal} vectors, readback/self-search PASS', flush=True)
++    finally:
++        if embedder.client is not None:
++            await embedder.client.close()
++
++    # Query-only config targets this isolated cache; keep the existing graph groups.
++    config['paths'] = {k: str(args.output / v) for k,v in
++                       [('cache_path', 'cache'), ('answer_path', 'answers'), ('log_path', 'logs')]}
++    config['graphiti']['reset_group'] = False
++    config['promote_cache'] = False
++    (args.output / 'query_config.yaml').write_text(yaml.safe_dump(config, sort_keys=False))
++    write(args.output / 'status.json', {'stage': 'completed', 'completed': len(counts), 'total':len(counts)})
++    files = {str(p.relative_to(args.output)): {'sha256': sha(p), 'bytes': p.stat().st_size}
++             for p in sorted(args.output.rglob('*')) if p.is_file()}
++    manifest = {'created_at': datetime.now(timezone.utc).isoformat(),
++                'code_commit': subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
++                'working_diff_sha256': hashlib.sha256(subprocess.check_output(['git','diff'],cwd=ROOT)).hexdigest(),
++                'dataset_sha256': sha(dataset_path), 'embedding': embed_config,
++                'source_config_sha256': sha(args.config), 'conversations': counts,
++                'source_total': sum(x['source_count'] for x in counts),
++                'faiss_total': sum(x['faiss_docs'] for x in counts),
++                'graph_reextracted': False, 'qa_run': False, 'files': files}
++    write(args.output / 'manifest.json', manifest)
++    print(f'Completed: {manifest["faiss_total"]} verified vectors. {args.output}', flush=True)
++
++
++def main():
++    ap = argparse.ArgumentParser(description=__doc__)
++    ap.add_argument('--config', type=Path, required=True)
++    ap.add_argument('--old-cache', type=Path, required=True)
++    ap.add_argument('--output', type=Path, required=True)
++    ap.add_argument('--credentials-file', type=Path)
++    args = ap.parse_args()
++    asyncio.run(run(args))
++
++
++if __name__ == '__main__':
++    main()
+diff --git a/tests/test_time_tree_source_identity.py b/tests/test_time_tree_source_identity.py
+new file mode 100644
+index 0000000..861f037
+--- /dev/null
++++ b/tests/test_time_tree_source_identity.py
+@@ -0,0 +1,49 @@
++"""Regression: window-local indices must never replace global source identity."""
++import json
++from datetime import datetime, timezone
++from unittest.mock import patch
++
++import pytest
++import build_tree_clustering_time as builder
++
++
++@pytest.mark.parametrize('original_text', [None, [{'full_text': f'full-{i}'} for i in range(5)]])
++def test_month_windows_keep_global_source_identity_and_untimed_source(tmp_path, original_text):
++    source = [f'user-{i}' for i in range(5)]
++    windows = [(datetime(2023, m, 1, tzinfo=timezone.utc),
++                datetime(2023, m+1, 1, tzinfo=timezone.utc)) for m in [1, 2]]
++    contents = [
++        {'u3': {'name': 'chunk_3', 'content': source[3]}},
++        {'u1': {'name': 'chunk_1', 'content': source[1]},
++         'u3': {'name': 'chunk_3', 'content': source[3]}},
++    ]
++    with patch.multiple(builder,
++                        get_time_range_from_graph=lambda *a: (windows[0][0], windows[-1][1]),
++                        split_time_range_by_month=lambda *a: windows,
++                        get_entities_with_embeddings=lambda *a: ([{'uuid': 'entity', 'name': 'E', 'summary': 's'}], [[1., 0.]]),
++                        get_entity_chunk_mapping=lambda *a: {},
++                        get_edges_with_episodes=lambda *a: [],
++                        perform_clustering=lambda *a, **k: [[0]],
++                        _call_llm_unified=lambda *a, **k: 'offline summary'), \
++         patch.object(builder, 'get_episode_contents', side_effect=contents):
++        tree, _, _ = builder.build_tree_with_clustering(
++            source, {}, str(tmp_path), object(), 'test', original_text=original_text)
++    assert set(tree) == {f'leaf_{i}' for i in range(5)}
++    expected = [f'full-{i}' if original_text else source[i] for i in range(5)]
++    assert [tree[f'leaf_{i}']['text'] for i in range(5)] == expected
++    snapshots = json.loads((tmp_path / 'snapshots.json').read_text())
++    assert set(snapshots[0]['cache']) == {'leaf_3'}
++    assert set(snapshots[1]['cache']) == {'leaf_1', 'leaf_3'}
++
++
++def test_named_episode_with_wrong_source_is_rejected(tmp_path):
++    windows = [(datetime(2023, 1, 1, tzinfo=timezone.utc), datetime(2023, 2, 1, tzinfo=timezone.utc))]
++    with patch.multiple(builder,
++                        get_time_range_from_graph=lambda *a: windows[0],
++                        split_time_range_by_month=lambda *a: windows,
++                        get_entities_with_embeddings=lambda *a: ([{'uuid': 'e', 'name': 'E'}], [[1., 0.]]),
++                        get_entity_chunk_mapping=lambda *a: {},
++                        get_edges_with_episodes=lambda *a: [],
++                        get_episode_contents=lambda *a: {'u': {'name': 'chunk_0', 'content': 'wrong'}}):
++        with pytest.raises(RuntimeError, match='Episode/source mismatch'):
++            builder.build_tree_with_clustering(['correct'], {}, str(tmp_path), object(), 'test')

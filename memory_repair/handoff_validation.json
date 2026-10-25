@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-25",
+  "python": "3.12.3",
+  "offline_conversations_verified": 10,
+  "source_chunks_verified": 2871,
+  "faiss_vectors_verified": 2871,
+  "live_restore": {
+    "conversation": "conv-26",
+    "namespace": "handoff_test_20261025_",
+    "nodes": 426,
+    "relationships": 811,
+    "all_properties_compared": true,
+    "datetime_types_verified": true,
+    "temporal_range_query_passed": true,
+    "repeat_read_only_test_passed": true
+  },
+  "full_qa_preparation": {
+    "conversation_caches": 10,
+    "query_filter_path": null,
+    "expected_queries": 1986,
+    "reset_group": false,
+    "passed": true
+  },
+  "qa_executed": false,
+  "model_api_calls": 0
+}

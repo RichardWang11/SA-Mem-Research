@@ -1,0 +1,79 @@
+experiment:
+  name: locomo_explicit_tsm_siliconflow_qwen_full_tmux_20261021
+  method: tsm
+  entrypoint: /workspace/research/tsm_temporal_first/TSM/main_time.py
+dataset:
+  dataset_name: Locomo
+  dataset_path: /workspace/research/tsm_temporal_first/TSM/data/locomo/locomo10.json
+cluster:
+  length: 1000
+  overlap: 200
+  merge_num: 3
+language: en
+llm:
+  api_model: Qwen/Qwen3-30B-A3B-Instruct-2507
+  backend_model: Qwen/Qwen3-30B-A3B-Instruct-2507
+  base_url: https://api.siliconflow.cn/v1
+  api_protocol: chat_completions
+  max_tokens: 8192
+  graphiti_max_tokens: 16384
+  temperature: 0
+  api_key_env: OPENAI_API_KEY
+embedding:
+  backend: openai_compatible
+  model: text-embedding-3-small
+  base_url: https://api.relayrouter.ai/v1
+  dimension: 1536
+  batch_size: 128
+  api_key_env: OPENAI_EMBEDDING_API_KEY
+paths:
+  cache_path: /workspace/research/tsm_temporal_first/runs/memory_repair_verified_20261025/cache
+  answer_path: /workspace/research/tsm_temporal_first/runs/memory_repair_verified_20261025/answers
+  log_path: /workspace/research/tsm_temporal_first/runs/memory_repair_verified_20261025/logs
+resume:
+  resumeIndex: 0
+  start_index: 0
+retriever:
+  kwargs:
+    enable_dense_retrieval: true
+    prebuilt_index: true
+    embedder: PublicEmbedder
+    embedding_batch_size: 128
+    shortest_path_k: 4
+    max_chunk_setting: 20
+    enable_temporal_filter: true
+    chunks_only: false
+    use_gpu_faiss: false
+    trace_enabled: true
+    trace_dense_k: 100
+split_method: round_based
+temporal:
+  enable: false
+extraction:
+  method: graphiti
+graphiti:
+  neo4j:
+    uri_env: NEO4J_URI
+    user_env: NEO4J_USER
+    password_env: NEO4J_PASSWORD
+    database_env: NEO4J_DATABASE
+    uri: bolt://localhost:7687
+    user: neo4j
+    database: neo4j
+  group_id_prefix: locomo_tsm_siliconflow_qwen_full_tmux_20261021_
+  reset_group: false
+entity_clustering:
+  enable: true
+  threshold: 0.1
+use_user_only: true
+parallel_api_calls: 1
+batch_size: 1
+use_batch_api: false
+llm_parallel:
+  enable_parallel: true
+  max_parallel_llm: 1
+  llm_retry_count: 3
+  llm_timeout: 120
+use_improved_paths: false
+query_filter_path: /workspace/research/tsm_temporal_first/retrieval_traces/locomo_explicit_temporal_qids.json
+promote_cache: false

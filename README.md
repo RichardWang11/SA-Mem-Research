@@ -4,6 +4,7 @@
 
 ## 先看什么
 
+0. **[完整 Memory 恢复与全量查询交接](memory_repair/HANDOFF_ZH.md)**：已修复的 2871 条向量、Neo4j 导入/验收、321 题或全量 1986 题查询，直接复用已生成 Memory。
 1. [环境配置](docs/environment.md)：独立 Python 环境、requirements 和 Neo4j。
 2. [Smoke 交接](docs/smoke.md)：已归档的真实单 Query 运行，以及可选在线复跑。
 3. [实验结果与限制](docs/results.md)：321 题、QA 指标、上游缺陷和候选案例。
@@ -21,7 +22,7 @@
 | 上游缺陷 | 时间窗口leaf覆盖、来源文本错配、英文日期参考时间回退；已核对固定官方Commit |
 | H1案例 | conv-26_11官方Gold排23/24但时间恢复未确认；conv-48_105补充支持证据31→6的离线排名投影 |
 
-公开实现的缺陷保持原状，不为了研究假设修复 Memory 或实现新的检索架构。历史 smoke 虽跑通，但Dense Tree覆盖不完整，不能当作效果验收通过。
+历史结果保留原缺陷。2026-10-25 按用户授权补充了独立的 Dense Tree 修复和完整 Memory：317 条 leaf 恢复为 2871 条，来源映射与向量验收通过。当前 `TSM/` 已合入修复；历史树源码保留在 `patches/historical_tree_builder.py.txt`，历史来源清单保留在 `manifests/source_snapshot_historical.json`。修复后尚未重跑 QA/LLM-J，H1 仍未验证；修复结果不冒充原版结果。
 
 ## 无API成本的快速检查
 
@@ -39,6 +40,7 @@ python3 scripts/inspect_cases.py
 
 ```text
 TSM/                    固定的TSM研究源码快照，含上游代码和已发生的适配/Trace改动
+memory_repair/          完整 Memory 包、图数据库恢复工具、全量1986题查询入口与中文交接
 configs/                默认官方参数、历史Qwen batch1参数
 scripts/                复跑、离线验收、评分和案例查看入口
 selection/              LoCoMo标注与321个Query ID；smoke只选conv-26_11
@@ -50,4 +52,4 @@ patches/                相对固定官方Commit的全部研究改动
 reports/                历史研究报告，当前解释以docs/为准
 ```
 
-本分支不包含API密钥、Neo4j密码、虚拟环境、完整LoCoMo下载文件或Neo4j数据库卷。Smoke归档和研究结果含公开LoCoMo派生文本，见[来源说明](docs/provenance.md)。
+本分支不包含API密钥、Neo4j密码、虚拟环境或Neo4j数据库卷。`memory_repair/` 新增固定版本的完整 LoCoMo 数据和已生成的完整 Memory（含 Neo4j 逻辑导出），按上游 CC BY-NC 4.0 条件交接。Smoke归档和研究结果含公开LoCoMo派生文本，见[来源说明](docs/provenance.md)。

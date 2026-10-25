@@ -1,0 +1,22 @@
+[
+  {
+    "sample_id": "synthetic-locomo-001",
+    "conversation": {
+      "speaker_a": "Rowan",
+      "speaker_b": "Mika",
+      "session_1_date_time": "2025-02-09T10:00:00Z",
+      "session_1": [
+        {"speaker": "Rowan", "text": "I plan to visit the imaginary Cedar Museum."},
+        {"speaker": "Mika", "text": "I hope the fictional exhibit is enjoyable."}
+      ]
+    },
+    "qa": [
+      {
+        "question": "Which imaginary museum did Rowan plan to visit?",
+        "answer": "The Cedar Museum.",
+        "evidence": ["D1:1"],
+        "category": 1
+      }
+    ]
+  }
+]

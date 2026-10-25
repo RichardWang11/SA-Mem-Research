@@ -1,0 +1,20 @@
+experiment: {name: locomo_traditional, method: traditional, entrypoint: main.py}
+dataset: {dataset_name: Locomo, dataset_path: data/locomo/locomo10.json}
+cluster: {length: 1000, overlap: 200, merge_num: 3}
+language: en
+llm: {api_model: gpt-4o-mini, max_tokens: 8192, temperature: 0, api_key_env: OPENAI_API_KEY}
+embedding: {backend: openai_compatible, model: text-embedding-3-small, dimension: 1536, batch_size: 128, api_key_env: OPENAI_API_KEY}
+paths: {log_path: outputs/locomo/traditional/logs, answer_path: outputs/locomo/traditional/answers, cache_path: outputs/locomo/traditional/cache}
+resume: {resumeIndex: 0, start_index: 0}
+retriever:
+  kwargs: {enable_dense_retrieval: true, prebuilt_index: true, embedder: PublicEmbedder, embedding_batch_size: 128, shortest_path_k: 4, max_chunk_setting: 20, enable_temporal_filter: false, chunks_only: false, use_gpu_faiss: false}
+split_method: round_based
+temporal: {enable: false}
+extraction: {method: none}
+entity_clustering: {enable: false, threshold: 0.1}
+use_user_only: true
+parallel_api_calls: 8
+batch_size: 8
+use_batch_api: false
+llm_parallel: {enable_parallel: true, max_parallel_llm: 8, llm_retry_count: 3, llm_timeout: 120}
+use_improved_paths: false

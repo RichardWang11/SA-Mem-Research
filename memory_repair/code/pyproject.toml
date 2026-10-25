@@ -1,0 +1,89 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tsm-memory"
+version = "0.1.1"
+description = "Temporal Semantic Memory for long-horizon conversational question answering"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+license = {file = "LICENSE"}
+authors = [
+  {name = "Miao Su"},
+  {name = "Yucan Guo"},
+  {name = "Zhongni Hou"},
+  {name = "Long Bai"},
+  {name = "Zixuan Li"},
+  {name = "Yufei Zhang"},
+  {name = "Guojun Yin"},
+  {name = "Wei Lin"},
+  {name = "Xiaolong Jin"},
+  {name = "Jiafeng Guo"},
+  {name = "Xueqi Cheng"},
+]
+dependencies = [
+  "numpy>=1.26,<2",
+  "PyYAML>=6,<7",
+  "tqdm>=4.67,<5",
+  "faiss-cpu>=1.9,<2",
+  "neo4j>=5.26,<6",
+  "graphiti-core==0.19.0",
+  "networkx>=3.2,<4",
+  "openai>=1.91,<3",
+  "scikit-learn>=1.6,<2",
+  "spacy>=3.8,<4",
+  "click>=8,<9",
+  "nest-asyncio>=1.6,<2",
+  "python-dateutil>=2.9,<3",
+  "dateparser>=1.4,<2",
+  "umap-learn>=0.5.7,<0.6",
+  "tiktoken>=0.12,<1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==9.0.3"]
+
+[project.urls]
+Repository = "https://github.com/cosmicexotic/TSM"
+Paper = "https://aclanthology.org/2026.findings-acl.1496/"
+Upstream = "https://github.com/YiboZhao624/E-2GraphRAG"
+
+[tool.setuptools]
+py-modules = [
+  "build_dense_index",
+  "build_tree",
+  "build_tree_chunk_clustering",
+  "build_tree_clustering",
+  "build_tree_clustering_time",
+  "constants",
+  "dataloader",
+  "decorators",
+  "dense_retriever",
+  "extract_graph",
+  "graph_utils",
+  "graphiti_extractor",
+  "hybrid_integration",
+  "hybrid_retriever",
+  "main",
+  "main_time",
+  "path_utils",
+  "path_utils_improved",
+  "process_utils",
+  "prompt_dict",
+  "query",
+  "query_refactored",
+  "snapshot_selector",
+  "temporal_extraction",
+  "temporal_filter",
+  "temporal_utils",
+  "utils",
+]
+
+[tool.setuptools.packages.find]
+include = ["provider*", "scripts*", "toolkits*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"

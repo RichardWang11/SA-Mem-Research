@@ -1,0 +1,18 @@
+[
+  {
+    "question_id": "synthetic-long-001",
+    "question_type": "single-session-user",
+    "question": "Which fictional tree did Rowan mention?",
+    "answer": "A cedar tree.",
+    "question_date": "2025-01-10",
+    "haystack_session_ids": ["synthetic-session-1"],
+    "haystack_dates": ["2025-01-04"],
+    "answer_session_ids": ["synthetic-session-1"],
+    "haystack_sessions": [
+      [
+        {"role": "user", "content": "I sketched a fictional cedar tree today."},
+        {"role": "assistant", "content": "That sounds like a calm drawing exercise."}
+      ]
+    ]
+  }
+]

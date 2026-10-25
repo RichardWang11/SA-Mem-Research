@@ -963,6 +963,12 @@ def build_tree_with_clustering(
     """
     start_time = time.time()
 
+    # Keep the complete source corpus separate from the per-window working set.
+    # The original implementation reassigns ``text_chunks`` inside every
+    # temporal window.  That is useful for window-local clustering, but it
+    # must not become the source of truth for the final dense tree.
+    source_text_chunks = list(text_chunks)
+
     # 检查缓存
     tree_path = os.path.join(cache_folder, "tree.json")
     index_path = os.path.join(cache_folder, "cluster_index.json")
@@ -1038,6 +1044,23 @@ def build_tree_with_clustering(
     all_caches = {} if not snapshots_only else (existing_cache_tree or {})
     all_cluster_indices = {} if not snapshots_only else (existing_cluster_index or {})
 
+    # Stable source-to-leaf identity.  Leaf IDs must be global across all
+    # monthly windows; otherwise ``all_caches.update(cache)`` silently
+    # overwrites leaves from earlier windows.
+    episode_uuid_to_leaf: Dict[str, str] = {}
+    source_leaf_texts: Dict[str, str] = {}
+    source_content_to_leaf: Dict[str, str] = {}
+    for i, chunk_content in enumerate(source_text_chunks):
+        leaf_id = f"leaf_{i}"
+        leaf_text = chunk_content
+        if original_text and i < len(original_text):
+            original_chunk = original_text[i]
+            if isinstance(original_chunk, dict) and "full_text" in original_chunk:
+                leaf_text = original_chunk["full_text"]
+        source_leaf_texts[leaf_id] = leaf_text
+        source_content_to_leaf.setdefault(str(chunk_content).strip(), leaf_id)
+    next_extra_leaf_index = len(source_leaf_texts)
+
     # 对每个时间窗口生成独立的snapshot
     for window_idx, time_window in enumerate(time_windows):
         # 初始化window_start和window_end，避免在创建snapshot时未定义
@@ -1084,14 +1107,50 @@ def build_tree_with_clustering(
             f"成功拉取Episodic内容={len(episode_content_map)}"
         )
 
+        # Resolve each window episode to a stable global leaf.  Graphiti
+        # episodes created by TSM are named chunk_<global_index>; use that
+        # identity when available.  The UUID fallback handles compatible
+        # graphs whose episode names do not follow that convention.
+        window_episode_leaf_ids: Dict[str, str] = {}
+        for episode_uuid, entry in episode_content_map.items():
+            name = str(entry.get("name") or "")
+            leaf_id = None
+            if name.startswith("chunk_"):
+                try:
+                    source_index = int(name[len("chunk_"):])
+                    if 0 <= source_index < len(source_text_chunks):
+                        if str(source_text_chunks[source_index]).strip() != (entry.get("content") or "").strip():
+                            raise RuntimeError(f"Episode/source mismatch: {name} ({episode_uuid})")
+                        leaf_id = f"leaf_{source_index}"
+                except ValueError:
+                    pass
+            if leaf_id is None:
+                leaf_id = episode_uuid_to_leaf.get(episode_uuid)
+            if leaf_id is None:
+                leaf_id = source_content_to_leaf.get((entry.get("content") or "").strip())
+            if leaf_id is None:
+                leaf_id = f"leaf_{next_extra_leaf_index}"
+                next_extra_leaf_index += 1
+            episode_uuid_to_leaf[episode_uuid] = leaf_id
+            window_episode_leaf_ids[episode_uuid] = leaf_id
+
+            # Preserve a source text for compatible graphs without a
+            # chunk_<index> name.  For normal TSM episodes the source text is
+            # already populated above from the original input.
+            if leaf_id not in source_leaf_texts:
+                source_leaf_texts[leaf_id] = (entry.get("content") or "").strip()
+            content_key = (entry.get("content") or "").strip()
+            if content_key:
+                source_content_to_leaf.setdefault(content_key, leaf_id)
+
         # 从episode_content_map中提取所有文本块（用于统计和后续处理）
-        text_chunks = []
+        window_text_chunks = []
         for ep_uuid, entry in episode_content_map.items():
             content = (entry.get("content") or "").strip()
             if content:
-                text_chunks.append(content)
+                window_text_chunks.append(content)
         # 去重（防止不同uuid内容相同）
-        text_chunks = list(dict.fromkeys(text_chunks))
+        text_chunks = list(dict.fromkeys(window_text_chunks))
 
         # 2. 执行GMM聚类
         logger.info("执行GMM聚类...")
@@ -1329,19 +1388,22 @@ def build_tree_with_clustering(
         # 4. 初始化缓存结构：snapshots_only 复用现有 tree，不再重建/覆盖；tree_only 需要重建 tree
         cache = (existing_cache_tree or {}) if snapshots_only else {}
 
-        # 收集所有唯一的chunk内容，用于构建叶子节点
+        # 建立窗口内容/episode到稳定leaf的映射。这里不再按窗口局部
+        # enumerate 生成 leaf_0, leaf_1, ...。
         all_chunks = {}  # episode_name -> content 的映射
         chunk_id_mapping = {}  # episode_name -> leaf_id 的映射
 
         # snapshots_only 不需要 leaf 映射/leaf 节点重建；tree_only 需要重建
         text_chunks_to_leaf = {}
         if not snapshots_only:
-            for i, chunk_content in enumerate(text_chunks):
-                text_chunks_to_leaf[chunk_content.strip()] = f"leaf_{i}"
-            for i, chunk_content in enumerate(text_chunks):
-                leaf_id = f"leaf_{i}"
-                episode_name = f"default_episode_{i}"
-                all_chunks[episode_name] = chunk_content
+            for episode_uuid, entry in episode_content_map.items():
+                content = (entry.get("content") or "").strip()
+                leaf_id = window_episode_leaf_ids.get(episode_uuid)
+                if not content or leaf_id is None:
+                    continue
+                text_chunks_to_leaf.setdefault(content, leaf_id)
+                episode_name = str(entry.get("name") or episode_uuid)
+                all_chunks[episode_name] = content
                 chunk_id_mapping[episode_name] = leaf_id
 
         # 5. 为每个聚类生成两条并行的一层摘要：persona摘要与实体总结摘要
@@ -1492,16 +1554,14 @@ def build_tree_with_clustering(
                     logger.error(traceback.format_exc())
 
         if not snapshots_only:
-            # 创建所有叶子节点，确保所有text_chunks都有对应的leaf节点
-            logger.info(f"创建 {len(text_chunks)} 个叶子节点")
-            for i, chunk_content in enumerate(text_chunks):
-                leaf_id = f"leaf_{i}"
-                leaf_text = chunk_content
-                if original_text and i < len(original_text):
-                    original_chunk = original_text[i]
-                    if isinstance(original_chunk, dict) and "full_text" in original_chunk:
-                        leaf_text = original_chunk["full_text"]
-                        logger.debug(f"Leaf节点 {i} 使用full_text保存完整的turn")
+            # 仅把当前窗口涉及的episode写入snapshot cache，但使用全局
+            # 稳定leaf ID，避免不同窗口覆盖彼此的数据。
+            logger.info(f"创建窗口叶子节点: {len(window_episode_leaf_ids)}")
+            for episode_uuid, leaf_id in window_episode_leaf_ids.items():
+                leaf_text = source_leaf_texts.get(
+                    leaf_id,
+                    (episode_content_map.get(episode_uuid, {}).get("content") or "").strip(),
+                )
                 cache[leaf_id] = {
                     "text": leaf_text,
                     "children": None,
@@ -1578,6 +1638,15 @@ def build_tree_with_clustering(
 
     # snapshots_only/tree_only：不覆盖对应的文件
     if not snapshots_only:
+        # Episodes without a temporal RELATES_TO edge must remain searchable
+        # as raw source chunks.  Add the complete source corpus once after
+        # window processing; this is separate from snapshot-local caches.
+        for leaf_id, leaf_text in source_leaf_texts.items():
+            all_caches.setdefault(leaf_id, {
+                "text": leaf_text,
+                "children": None,
+                "parent": None,
+            })
         with open(tree_path, "w", encoding="utf-8") as f:
             json.dump(all_caches, f, ensure_ascii=False, indent=4)
         with open(index_path, "w", encoding="utf-8") as f:

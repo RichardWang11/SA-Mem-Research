@@ -17,7 +17,10 @@ def main():
     exec(compile(ast.fix_missing_locations(ast.Module(body=[fn],type_ignores=[])),'date_source','exec'),env)
     result=env['_reference_time']('Date: 7:55 pm on 9 June, 2023\nUser: example',22).isoformat()
     assert result=='2000-01-01T00:00:22+00:00'
-    tree=ast.parse((ROOT/'TSM/build_tree_clustering_time.py').read_text())
+    # Reproduce the archived pre-repair upstream issue, even after the active
+    # TSM snapshot has received the source-identity repair.
+    historical = ROOT/'patches/historical_tree_builder.py.txt'
+    tree=ast.parse((historical if historical.exists() else ROOT/'TSM/build_tree_clustering_time.py').read_text())
     loop=next(n for n in ast.walk(tree) if isinstance(n,ast.For) and ast.unparse(n.target)=='(i, chunk_content)' and any(isinstance(x,ast.Name) and x.id=='leaf_text' for x in ast.walk(n)))
     class Log:
         def debug(self,*args):pass

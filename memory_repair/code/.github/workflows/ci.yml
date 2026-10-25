@@ -1,0 +1,27 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements.lock
+      - run: python scripts/validate_configs.py
+      - run: python scripts/scan_release.py
+      - run: python -m compileall -q .
+      - run: pytest -q
+      - run: python scripts/verify_offline_repro.py
+      - run: python scripts/synthetic_e2e.py

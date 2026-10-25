@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-25",
+  "target_repository": "https://github.com/RichardWang11/SA-Mem-Research",
+  "target_branch": "research/tsm-locomo-temporal-audit",
+  "source_repair_commit": "d7c124c1e1c53b9afab882e9d080d5eb9ba57a83",
+  "source_handoff_commit": "083febd",
+  "historical_artifacts_preserved": true,
+  "repaired_memory_conversations": 10,
+  "repaired_source_and_vector_count": 2871,
+  "graph_nodes": 5447,
+  "graph_relationships": 8490,
+  "code_regression_and_release_tests_passed": 13,
+  "recorded_smoke_check": "passed; pre-repair result remains explicitly historical",
+  "historical_issue_reproduction": "passed using archived pre-repair tree source",
+  "live_graph_restore_test": "conv-26 isolated namespace; 426 nodes / 811 relationships; full property and temporal query check passed",
+  "full_query_preparation": "10 complete caches; query_filter_path=null; expects 1986 unique QIDs",
+  "new_qa_or_judge_run": false,
+  "model_api_calls_during_this_sync": 0
+}

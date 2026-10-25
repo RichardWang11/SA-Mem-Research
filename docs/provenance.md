@@ -9,6 +9,8 @@
 
 `TSM/`是运行后采集的研究源码快照，不包含其.git、不嵌套仓库、不包含SA-Mem。不能声称它是运行开始时归档的不可变快照。`manifests/source_snapshot.json`给出逐文件哈希和原始dirty状态。
 
+更新：当前 `TSM/` 已合入源实验仓库修复提交 `d7c124c`（leaf 全局身份、来源对齐和全量源文本保留），另含恢复脚本、回归测试和修复说明。历史源码哈希见 `manifests/source_snapshot_historical.json`，历史树代码见 `patches/historical_tree_builder.py.txt`，本次修复补丁见 `patches/temporal_tree_repair.patch`。`memory_repair/code/` 是本次构建修复时的完整实际代码快照。
+
 `patches/research_vs_upstream.patch`包含Query筛选、Retrieval Trace、API请求Trace、Graphiti Episode初始化兼容、输出预算传递、禁用不支持的可选参数、Chat Completions JSON模式适配。没有修复上述树构建和时间错误。
 
 Chat Completions适配器会向提示词追加JSON Schema，结构保证不等同于Responses严格Structured Outputs。部分Trace在追加前记录messages；阅读原始prompt时需结合适配器代码。
@@ -29,7 +31,7 @@ Python代码保留上游MIT许可，见TSM/LICENSE。Graphiti依赖源码和提�
 
 官方LoCoMo：https://github.com/snap-research/locomo
 
-固定数据Commit：`3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376`。由TSM官方脚本下载并校验，不提交完整数据下载文件。
+固定数据Commit：`3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376`。由TSM官方脚本下载并校验；本次在 `memory_repair/locomo10.json` 补充同一固定版本完整数据用于跨机器恢复。
 
 selection/annotations_locomo1986.csv是用户提供分类文件中的LoCoMo部分；原文件实际还包含500条LongMemEval。本交接包不重新生成或推断JEV标签，来源标记tsm_active也不替代本地Parser实际结果。
 

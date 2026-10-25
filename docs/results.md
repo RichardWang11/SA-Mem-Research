@@ -1,5 +1,6 @@
 # 实验结果与结论边界
 
+以下 QA 数值均来自修复前的历史运行。2026-10-25 新增的修复 Memory 已通过 2871 个 Chunk 的完整性验收，但尚未重跑 QA/LLM-J；详见 [交接说明](../memory_repair/HANDOFF_ZH.md)。
 ## 样本和执行
 
 数据使用LoCoMo固定Commit `3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376` 的locomo10.json，SHA256为 `79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4`。保留完整历史，筛选JEV显式时间321题；不是官方Temporal类321题。
@@ -48,7 +49,7 @@ python scripts/score_existing_qa.py --out .local/rescored
 2. 窗口局部下标i用于全局original_text[i]，实际文本错配到历史开头。
 3. _reference_time仅识别数字年月日，LoCoMo英文日期回退到2000年。
 
-构建文件与官方Commit逐字节一致，日期函数与官方AST一致；证据见 `results/full/issue_provenance.json`。我们不修复这些逻辑，记录其对公开实现复现的影响。不能据此推断论文内部实现或论文分数有误。
+历史运行的构建文件与官方Commit逐字节一致，日期函数与官方AST一致；证据见 `results/full/issue_provenance.json`。后续已按用户授权修复问题1、2，并恢复完整 Dense Memory；问题3的日期逻辑保持原样。历史损坏源码仍有独立归档。不能据此推断论文内部实现或论文分数有误。
 
 每个Conversation有181至334个输入Round记录，最终只有23至44个Dense leaf。所谓7.5%～16.6%的覆盖率是“保存的第一条消息文本能在Dense原文中找到”的比例，不是独立标注的事实抽取正确率。
 
