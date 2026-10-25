@@ -1,0 +1,55 @@
+diff --git a/extract_graph.py b/extract_graph.py
+index fb9e3ad..d33f03b 100644
+--- a/extract_graph.py
++++ b/extract_graph.py
+@@ -158,15 +158,25 @@ def build_graph(triplets: List[Tuple[str, str, int]]) -> nx.Graph:
+ 
+     # 创建字典来存储边的权重和
+     edge_weights = {}
++    edge_attributes = {}
+     for item in triplets:
+         n1, n2, weight = item[:3]
++        # Graphiti caches store [source, target, attributes], while legacy
++        # caches store [source, target, numeric_weight]. Preserve attributes
++        # and keep the existing numeric aggregation rule for both formats.
++        attributes = dict(weight) if isinstance(weight, dict) else {}
++        if isinstance(weight, dict):
++            weight = attributes.get('weight', 1)
+         # 因为是无向图，所以(a,b)和(b,a)是相同的边
+         edge = tuple(sorted([n1, n2]))
+         edge_weights[edge] = edge_weights.get(edge, 0) + int(float(weight))
++        edge_attributes.setdefault(edge, {}).update(attributes)
+ 
+     # 将合并后的边添加到图中
+     for (n1, n2), weight in edge_weights.items():
+-        G.add_edge(n1, n2, weight=weight)
++        attributes = edge_attributes[(n1, n2)]
++        attributes['weight'] = weight
++        G.add_edge(n1, n2, **attributes)
+ 
+     return G
+ 
+diff --git a/tests/test_graph_cache_loader.py b/tests/test_graph_cache_loader.py
+new file mode 100644
+index 0000000..a66d312
+--- /dev/null
++++ b/tests/test_graph_cache_loader.py
+@@ -0,0 +1,18 @@
++from extract_graph import build_graph
++
++
++def test_legacy_weights_still_merge():
++    graph = build_graph([['a','b',2],['b','a',3]])
++    assert graph['a']['b'] == {'weight':5}
++
++
++def test_graphiti_attributes_restore_without_mutating_cache():
++    attrs = {'weight':1.0,'fact':'a fact','relation':'KNOWS'}
++    graph = build_graph([['a','b',attrs]])
++    assert graph['a']['b'] == {'weight':1,'fact':'a fact','relation':'KNOWS'}
++    assert attrs['weight'] == 1.0
++
++
++def test_graphiti_default_weight_and_duplicate_merge():
++    graph = build_graph([['a','b',{'fact':'first'}],['b','a',{'weight':2,'fact':'last'}]])
++    assert graph['a']['b'] == {'weight':3,'fact':'last'}

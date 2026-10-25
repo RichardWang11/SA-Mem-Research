@@ -11,6 +11,8 @@
 
 更新：当前 `TSM/` 已合入源实验仓库修复提交 `d7c124c`（leaf 全局身份、来源对齐和全量源文本保留），另含恢复脚本、回归测试和修复说明。历史源码哈希见 `manifests/source_snapshot_historical.json`，历史树代码见 `patches/historical_tree_builder.py.txt`，本次修复补丁见 `patches/temporal_tree_repair.patch`。`memory_repair/code/` 是本次构建修复时的完整实际代码快照。
 
+真实 query-only Smoke 后另补 `4aeb080`，兼容 Graphiti `graph.json` 的属性字典格式；旧数字权重格式仍沿用原合并行为。此修复只影响缓存反序列化，补丁见 `patches/query_cache_compatibility.patch`。`memory_repair/code/` 同步该后续修复。
+
 `patches/research_vs_upstream.patch`包含Query筛选、Retrieval Trace、API请求Trace、Graphiti Episode初始化兼容、输出预算传递、禁用不支持的可选参数、Chat Completions JSON模式适配。没有修复上述树构建和时间错误。
 
 Chat Completions适配器会向提示词追加JSON Schema，结构保证不等同于Responses严格Structured Outputs。部分Trace在追加前记录messages；阅读原始prompt时需结合适配器代码。

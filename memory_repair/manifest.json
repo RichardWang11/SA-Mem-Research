@@ -16,8 +16,8 @@
   "code_snapshot_note": "Includes existing provider/trace changes as used by the experiment; code_worktree.patch plus the two explicitly included adapters describe changes beyond repair_commit.",
   "files": {
     "HANDOFF_ZH.md": {
-      "sha256": "8cb5c3c5f1f618edd12dae3b72fe059d0855b609e5815c7752bb313ef55f5237",
-      "bytes": 10657
+      "sha256": "65f7ac3767d4fb1dd87340a3f4e7c9e6fccaeae24fceba125900fdc7089e8f56",
+      "bytes": 11056
     },
     "README.md": {
       "sha256": "c4a06744fe0c3d1da1097eafc50409ff73096bbb7d7cb43d1e923905e8a56444",
@@ -172,8 +172,8 @@
       "bytes": 3714
     },
     "code/extract_graph.py": {
-      "sha256": "03bb95e5d65dc7974ed7e236dbf66f1895a2aab108b08311486dcab88ea7998b",
-      "bytes": 12061
+      "sha256": "bd290194522e302605bc0d0027a4c1d655bd830268b4d5aacdbede10cee4f02e",
+      "bytes": 12617
     },
     "code/graph_utils.py": {
       "sha256": "81c0d15311206bf54d5289773bffecbeba7e04c660425e406e5e20d6c1518f3f",
@@ -319,6 +319,10 @@
       "sha256": "de01169bfc83ab2f44edb2a082bcaad73747e934f16492b42193076f0c341e38",
       "bytes": 10007
     },
+    "code/tests/test_graph_cache_loader.py": {
+      "sha256": "5975bd010f115b97ec4f84c12037505807bfde81120aa792878ae4f7a6bbe19e",
+      "bytes": 661
+    },
     "code/tests/test_release_contracts.py": {
       "sha256": "531f1009971d27aef349cefe76970d5aef280121d7a71100eba83b0838e83c7d",
       "bytes": 4465
@@ -427,5 +431,6 @@
       "sha256": "5837bfef04109eb4db1b08233fe4ed1a9059535bb1f0f094a59b725f369cd338",
       "bytes": 115
     }
-  }
+  },
+  "query_only_compatibility_commit": "4aeb080"
 }

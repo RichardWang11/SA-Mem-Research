@@ -41,7 +41,7 @@
     "dense_retriever.py": "e320c24e514ca612c822d1cd5c050df655551f7ed6fa0aad9871de1183b2c18e",
     "docker-compose.yml": "0d30262d5d11d1fb4866aad58edad586554e93ddbd3e3a6de1822881d8045015",
     "docs/DENSE_MEMORY_REPAIR.md": "7de393cd4edaddd71d633ab6764407b0aac8573443bcd6f32f58e08b25fa811f",
-    "extract_graph.py": "03bb95e5d65dc7974ed7e236dbf66f1895a2aab108b08311486dcab88ea7998b",
+    "extract_graph.py": "bd290194522e302605bc0d0027a4c1d655bd830268b4d5aacdbede10cee4f02e",
     "graph_utils.py": "81c0d15311206bf54d5289773bffecbeba7e04c660425e406e5e20d6c1518f3f",
     "graphiti_extractor.py": "7a44b6ae8a384a620bfc1dd0e5da81472ef3734ea3be30581eff041b2dd37a30",
     "hybrid_integration.py": "e43893b649e54275e9a6e099883fece08cb4d9b6d0a4da056c01e2c026b9fff8",
@@ -78,6 +78,7 @@
     "temporal_extraction.py": "66e1f6a5817a0524ecdda20eb8cb3dcb0891d69017ed3b7d74bf6a1059cacd02",
     "temporal_filter.py": "14c3ba4b4133c62e9a8bfbd7697721bcaaaafdd3ed6bbc8d389b34a2b5fbfa8f",
     "temporal_utils.py": "de01169bfc83ab2f44edb2a082bcaad73747e934f16492b42193076f0c341e38",
+    "tests/test_graph_cache_loader.py": "5975bd010f115b97ec4f84c12037505807bfde81120aa792878ae4f7a6bbe19e",
     "tests/test_release_contracts.py": "531f1009971d27aef349cefe76970d5aef280121d7a71100eba83b0838e83c7d",
     "tests/test_time_tree_source_identity.py": "7dd557e1321101d6efa566d895be378b0417fb493acda02b324e020ef73b27ee",
     "toolkits/__init__.py": "c7aad6f5e8f482dc97dccd2153cbb551e1657dce655feb33c5b4f290010f043f",
@@ -85,5 +86,6 @@
     "toolkits/token_tracker.py": "b193ed2769b4ab3631d30d0b934ffd592b936a24fc25f91782ff6cec8ccb91a9",
     "utils.py": "01ec5be929b3e59e9a15a7fbeae244db1ee91e6da3fd9b10a344a620f5d8af9c"
   },
-  "historical_research_head": "7c1534dcf4ef4afb41afed6cb01746ec0b140d1e"
+  "historical_research_head": "7c1534dcf4ef4afb41afed6cb01746ec0b140d1e",
+  "query_only_compatibility_commit": "4aeb080"
 }

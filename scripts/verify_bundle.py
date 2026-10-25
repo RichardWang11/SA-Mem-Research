@@ -16,7 +16,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--write-manifest',action='store_true')
     args=parser.parse_args()
-    files=sorted(p for p in ROOT.rglob('*') if p.is_file() and not any(x in p.relative_to(ROOT).parts for x in ['.git','.venv','.local','outputs','__pycache__']))
+    files=sorted(p for p in ROOT.rglob('*') if p.is_file() and not any(x in p.relative_to(ROOT).parts for x in ['.git','.venv','.venv312','.local','outputs','__pycache__','.pytest_cache']))
     findings=[];hashes={}
     def scan(name,data):
         if any(p.search(data) for p in PATTERNS):findings.append(name)

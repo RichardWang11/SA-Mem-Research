@@ -24,6 +24,11 @@
 317 恢复为 2871。修复没有改变 Query Parser、Temporal Rerank、Answer Prompt。
 细节与测试见 `REPAIR_REPORT.md`、`code/docs/DENSE_MEMORY_REPAIR.md`。
 
+随后在真实 query-only Smoke 中补充修复 `4aeb080`：Graphiti 的 `graph.json`
+第三列是属性字典，旧 `build_graph` 只接受数字权重。当前读取器兼容两种格式，
+保留 fact/relation 等属性及旧权重合并规则。恢复包中的 `code/` 与仓库 `TSM/`
+均已包含此兼容修复，已通过两个真实查询 Smoke；源数据和 FAISS 向量没有改变。
+
 “完整”指原 TSM Loader 产生的所有 round：相邻不同 speaker 配成一轮；
 同 speaker 位置跳过、最后落单的话语省略。它并不保证每条原始 utterance
 都保留。这一 Loader 行为未修改。

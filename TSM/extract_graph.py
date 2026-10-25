@@ -158,15 +158,25 @@ def build_graph(triplets: List[Tuple[str, str, int]]) -> nx.Graph:
 
     # 创建字典来存储边的权重和
     edge_weights = {}
+    edge_attributes = {}
     for item in triplets:
         n1, n2, weight = item[:3]
+        # Graphiti caches store [source, target, attributes], while legacy
+        # caches store [source, target, numeric_weight]. Preserve attributes
+        # and keep the existing numeric aggregation rule for both formats.
+        attributes = dict(weight) if isinstance(weight, dict) else {}
+        if isinstance(weight, dict):
+            weight = attributes.get('weight', 1)
         # 因为是无向图，所以(a,b)和(b,a)是相同的边
         edge = tuple(sorted([n1, n2]))
         edge_weights[edge] = edge_weights.get(edge, 0) + int(float(weight))
+        edge_attributes.setdefault(edge, {}).update(attributes)
 
     # 将合并后的边添加到图中
     for (n1, n2), weight in edge_weights.items():
-        G.add_edge(n1, n2, weight=weight)
+        attributes = edge_attributes[(n1, n2)]
+        attributes['weight'] = weight
+        G.add_edge(n1, n2, **attributes)
 
     return G
 
