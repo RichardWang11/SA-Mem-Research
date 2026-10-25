@@ -19,10 +19,11 @@
 | 历史运行 | Qwen/Qwen3-30B-A3B-Instruct-2507，batch 1，Top-20，Graphiti预算16k，52,352份请求Trace |
 | 默认新运行配置 | **官方仓库 batch 8 / parallel_api_calls 8 / max_parallel_llm 8**；归档结果不会改写成batch 8 |
 | QA | 主评测官方LoCoMo词级F1 2.96%；**论文GPT-4.1-mini LLM-J Accuracy未运行** |
+| 修复后实测 | 相同244题、Mem0提示词+gpt-4o-mini：169/244=69.26%，修复前37/244=15.16%；新QA/Judge/Trace已归档，详见[报告](results/repaired_qa321_20261025/REPORT.md) |
 | 上游缺陷 | 时间窗口leaf覆盖、来源文本错配、英文日期参考时间回退；已核对固定官方Commit |
 | H1案例 | conv-26_11官方Gold排23/24但时间恢复未确认；conv-48_105补充支持证据31→6的离线排名投影 |
 
-历史结果保留原缺陷。2026-10-25 按用户授权补充了独立的 Dense Tree 修复和完整 Memory：317 条 leaf 恢复为 2871 条，来源映射与向量验收通过。当前 `TSM/` 已合入修复；历史树源码保留在 `patches/historical_tree_builder.py.txt`，历史来源清单保留在 `manifests/source_snapshot_historical.json`。修复后尚未重跑 QA/LLM-J，H1 仍未验证；修复结果不冒充原版结果。
+历史结果保留原缺陷。2026-10-25 按用户授权补充了独立的 Dense Tree 修复和完整 Memory：317 条 leaf 恢复为 2871 条，来源映射与向量验收通过。当前 `TSM/` 已合入修复；历史树源码保留在 `patches/historical_tree_builder.py.txt`，历史来源清单保留在 `manifests/source_snapshot_historical.json`。修复后321题QA与Mem0口径LLM-J均已完成，H1仍需在完整Memory上验证Temporal-first对照；修复结果不冒充原版结果或论文Judge口径。
 
 ## 无API成本的快速检查
 

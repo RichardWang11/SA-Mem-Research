@@ -1,0 +1,190 @@
+{
+  "main": {
+    "samples": 244,
+    "mapped": 242,
+    "mapping_unknown": 1,
+    "no_gold_evidence": 1,
+    "before": {
+      "parser_hits": 202,
+      "tkg_active": 44,
+      "dense_top20_ids": {
+        "sample_any_gold": 32,
+        "sample_all_gold": 29,
+        "sample_denominator": 242,
+        "gold_leaf_hits": 35,
+        "gold_leaf_denominator": 277,
+        "gold_leaf_recall": 0.1263537906137184
+      },
+      "dense_top100_ids": {
+        "sample_any_gold": 33,
+        "sample_all_gold": 30,
+        "sample_denominator": 242,
+        "gold_leaf_hits": 37,
+        "gold_leaf_denominator": 277,
+        "gold_leaf_recall": 0.13357400722021662
+      },
+      "final_context_ids": {
+        "sample_any_gold": 32,
+        "sample_all_gold": 29,
+        "sample_denominator": 242,
+        "gold_leaf_hits": 35,
+        "gold_leaf_denominator": 277,
+        "gold_leaf_recall": 0.1263537906137184
+      }
+    },
+    "after": {
+      "parser_hits": 202,
+      "tkg_active": 179,
+      "dense_top20_ids": {
+        "sample_any_gold": 182,
+        "sample_all_gold": 168,
+        "sample_denominator": 242,
+        "gold_leaf_hits": 196,
+        "gold_leaf_denominator": 277,
+        "gold_leaf_recall": 0.7075812274368231
+      },
+      "dense_top100_ids": {
+        "sample_any_gold": 232,
+        "sample_all_gold": 228,
+        "sample_denominator": 242,
+        "gold_leaf_hits": 262,
+        "gold_leaf_denominator": 277,
+        "gold_leaf_recall": 0.9458483754512635
+      },
+      "final_context_ids": {
+        "sample_any_gold": 182,
+        "sample_all_gold": 168,
+        "sample_denominator": 242,
+        "gold_leaf_hits": 196,
+        "gold_leaf_denominator": 277,
+        "gold_leaf_recall": 0.7075812274368231
+      }
+    }
+  },
+  "adversarial": {
+    "samples": 77,
+    "mapped": 77,
+    "mapping_unknown": 0,
+    "no_gold_evidence": 0,
+    "before": {
+      "parser_hits": 67,
+      "tkg_active": 13,
+      "dense_top20_ids": {
+        "sample_any_gold": 10,
+        "sample_all_gold": 10,
+        "sample_denominator": 77,
+        "gold_leaf_hits": 10,
+        "gold_leaf_denominator": 80,
+        "gold_leaf_recall": 0.125
+      },
+      "dense_top100_ids": {
+        "sample_any_gold": 10,
+        "sample_all_gold": 10,
+        "sample_denominator": 77,
+        "gold_leaf_hits": 10,
+        "gold_leaf_denominator": 80,
+        "gold_leaf_recall": 0.125
+      },
+      "final_context_ids": {
+        "sample_any_gold": 10,
+        "sample_all_gold": 10,
+        "sample_denominator": 77,
+        "gold_leaf_hits": 10,
+        "gold_leaf_denominator": 80,
+        "gold_leaf_recall": 0.125
+      }
+    },
+    "after": {
+      "parser_hits": 67,
+      "tkg_active": 59,
+      "dense_top20_ids": {
+        "sample_any_gold": 61,
+        "sample_all_gold": 61,
+        "sample_denominator": 77,
+        "gold_leaf_hits": 64,
+        "gold_leaf_denominator": 80,
+        "gold_leaf_recall": 0.8
+      },
+      "dense_top100_ids": {
+        "sample_any_gold": 77,
+        "sample_all_gold": 77,
+        "sample_denominator": 77,
+        "gold_leaf_hits": 80,
+        "gold_leaf_denominator": 80,
+        "gold_leaf_recall": 1.0
+      },
+      "final_context_ids": {
+        "sample_any_gold": 61,
+        "sample_all_gold": 61,
+        "sample_denominator": 77,
+        "gold_leaf_hits": 64,
+        "gold_leaf_denominator": 80,
+        "gold_leaf_recall": 0.8
+      }
+    }
+  },
+  "all": {
+    "samples": 321,
+    "mapped": 319,
+    "mapping_unknown": 1,
+    "no_gold_evidence": 1,
+    "before": {
+      "parser_hits": 269,
+      "tkg_active": 57,
+      "dense_top20_ids": {
+        "sample_any_gold": 42,
+        "sample_all_gold": 39,
+        "sample_denominator": 319,
+        "gold_leaf_hits": 45,
+        "gold_leaf_denominator": 357,
+        "gold_leaf_recall": 0.12605042016806722
+      },
+      "dense_top100_ids": {
+        "sample_any_gold": 43,
+        "sample_all_gold": 40,
+        "sample_denominator": 319,
+        "gold_leaf_hits": 47,
+        "gold_leaf_denominator": 357,
+        "gold_leaf_recall": 0.13165266106442577
+      },
+      "final_context_ids": {
+        "sample_any_gold": 42,
+        "sample_all_gold": 39,
+        "sample_denominator": 319,
+        "gold_leaf_hits": 45,
+        "gold_leaf_denominator": 357,
+        "gold_leaf_recall": 0.12605042016806722
+      }
+    },
+    "after": {
+      "parser_hits": 269,
+      "tkg_active": 238,
+      "dense_top20_ids": {
+        "sample_any_gold": 243,
+        "sample_all_gold": 229,
+        "sample_denominator": 319,
+        "gold_leaf_hits": 260,
+        "gold_leaf_denominator": 357,
+        "gold_leaf_recall": 0.7282913165266106
+      },
+      "dense_top100_ids": {
+        "sample_any_gold": 309,
+        "sample_all_gold": 305,
+        "sample_denominator": 319,
+        "gold_leaf_hits": 342,
+        "gold_leaf_denominator": 357,
+        "gold_leaf_recall": 0.957983193277311
+      },
+      "final_context_ids": {
+        "sample_any_gold": 243,
+        "sample_all_gold": 229,
+        "sample_denominator": 319,
+        "gold_leaf_hits": 260,
+        "gold_leaf_denominator": 357,
+        "gold_leaf_recall": 0.7282913165266106
+      }
+    }
+  },
+  "note": "Same global leaf IDs are auditable via source_mapping. Historical missing-index gold is distinct from within-index Dense Miss. Unknown or absent gold excluded from evidence recall denominators.",
+  "partial": false
+}

@@ -1,6 +1,27 @@
 # 实验结果与结论边界
 
-以下 QA 数值均来自修复前的历史运行。2026-10-25 新增的修复 Memory 已通过 2871 个 Chunk 的完整性验收，但尚未重跑 QA/LLM-J；详见 [交接说明](../memory_repair/HANDOFF_ZH.md)。
+除下面新增对照外，后续章节 QA 数值来自修复前历史运行。
+
+## 2026-10-25 完整 Memory 修复后实测
+
+相同321题已重新生成QA并完成Judge，原始请求、答案、逐题标签及10个错误案例见 [完整报告](../results/repaired_qa321_20261025/REPORT.md)。
+
+| 指标 | 修复前 | 修复后 |
+|---|---:|---:|
+| 主评测244题：Mem0提示词+gpt-4o-mini LLM-J | 37/244，15.16% | 169/244，69.26% |
+| Gold leaf Recall@20（可靠映射242题、277个Gold leaf） | 35/277，12.64% | 196/277，70.76% |
+| Gold leaf Recall@100（同一分母） | 37/277，13.36% | 262/277，94.58% |
+| 主评测官方词面F1 | 2.9568% | 8.2033% |
+| Adversarial：合成拒答参考LLM-J | 69/77 | 43/77 |
+| Adversarial：官方拒答短语规则 | 9/77 | 4/77 |
+
+主评测错→对139、对→错7，净增132题，+54.10个百分点。仍错75题中，52题Gold未完整进入Top-20，23题Gold已进入最终上下文；这是描述性分组，不是单因素因果归因。时间Parser命中仍为202/244，候选中的TKG激活由44/244变为179/244，并不等同于时间解析/时间事实正确率。
+
+答案模型仍为Qwen/Qwen3-30B-A3B-Instruct-2507，Top-20、temperature=0、max_tokens=8192，Answer Prompt不变。QA按Conversation独立进程运行，初始3路、峰值8路，Conversation内顺序执行；无意图重复请求。321题答案与321次Judge均有效，另有2次Smoke；646份QA/Embedding Trace、321份Judge尝试Trace保留。SDK内部重试另见console。
+
+历史Judge结果缺少subset字段，旧汇总文件后来出现空分组；本次已按原始321条标签与CSV重新分组，未改标签、未重新调用旧Judge，校验了前后Judge模型/端点/提示词哈希/参数一致。
+
+该Judge不是论文GPT-4.1-mini口径，样本也不是LoCoMo全部1986题。Adversarial使用合成参考、应单列，且本次结果下降。完整索引显著改善了该子集的召回与主评测回答，但尚不能据此证明Temporal-first优于Dense-first。
 ## 样本和执行
 
 数据使用LoCoMo固定Commit `3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376` 的locomo10.json，SHA256为 `79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4`。保留完整历史，筛选JEV显式时间321题；不是官方Temporal类321题。

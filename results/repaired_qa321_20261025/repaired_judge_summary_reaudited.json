@@ -1,0 +1,105 @@
+{
+  "mode": "all",
+  "judge_prompt": "Mem0 paper Appendix A",
+  "judge_model_requested": "gpt-4o-mini",
+  "judge_models_returned": {
+    "gpt-4o-mini-2024-07-18": 312,
+    "gpt-4o-mini": 9
+  },
+  "real_questions": {
+    "expected": 321,
+    "scored": 321,
+    "errors": 0,
+    "correct": 212,
+    "wrong": 109,
+    "accuracy_on_scored": 0.660436137071651,
+    "complete_accuracy": 0.660436137071651
+  },
+  "main_244": {
+    "expected": 244,
+    "scored": 244,
+    "errors": 0,
+    "correct": 169,
+    "wrong": 75,
+    "accuracy_on_scored": 0.6926229508196722,
+    "complete_accuracy": 0.6926229508196722
+  },
+  "adversarial_77_llm_j_synthetic_reference": {
+    "expected": 77,
+    "scored": 77,
+    "errors": 0,
+    "correct": 43,
+    "wrong": 34,
+    "accuracy_on_scored": 0.5584415584415584,
+    "complete_accuracy": 0.5584415584415584
+  },
+  "adversarial_77_official_refusal_heuristic": {
+    "expected": 77,
+    "refusal_count": 4,
+    "refusal_rate": 0.05194805194805195
+  },
+  "controls": {
+    "expected": 0,
+    "passed": 0
+  },
+  "by_category": {
+    "1": {
+      "expected": 15,
+      "scored": 15,
+      "errors": 0,
+      "correct": 6,
+      "wrong": 9,
+      "accuracy_on_scored": 0.4,
+      "complete_accuracy": 0.4
+    },
+    "2": {
+      "expected": 44,
+      "scored": 44,
+      "errors": 0,
+      "correct": 23,
+      "wrong": 21,
+      "accuracy_on_scored": 0.5227272727272727,
+      "complete_accuracy": 0.5227272727272727
+    },
+    "3": {
+      "expected": 9,
+      "scored": 9,
+      "errors": 0,
+      "correct": 7,
+      "wrong": 2,
+      "accuracy_on_scored": 0.7777777777777778,
+      "complete_accuracy": 0.7777777777777778
+    },
+    "4": {
+      "expected": 176,
+      "scored": 176,
+      "errors": 0,
+      "correct": 133,
+      "wrong": 43,
+      "accuracy_on_scored": 0.7556818181818182,
+      "complete_accuracy": 0.7556818181818182
+    },
+    "5": {
+      "expected": 77,
+      "scored": 77,
+      "errors": 0,
+      "correct": 43,
+      "wrong": 34,
+      "accuracy_on_scored": 0.5584415584415584,
+      "complete_accuracy": 0.5584415584415584
+    }
+  },
+  "usage_including_retries_and_controls": {
+    "completion_tokens": 1926,
+    "prompt_tokens": 205167,
+    "total_tokens": 207093
+  },
+  "request_statuses": {
+    "completed": 321
+  },
+  "excluded_qids": 0,
+  "note": "Main uses real LoCoMo answers. Category 5 has no ordinary gold; adversarial LLM-J uses a synthetic abstention reference and must be reported separately. The refusal heuristic follows LoCoMo official evaluation.py. Invalid labels/API errors are unscored, not WRONG.",
+  "identical_prompt_conflicts": [],
+  "smoke_acceptance_passed": null,
+  "reaggregation_note": "Subset membership taken from canonical annotation CSV, not optional subset fields in old per-question result records. Raw completed judge labels reused unchanged; no model calls."
+}

@@ -1,0 +1,23 @@
+{
+  "qa_and_smoke_usage": {
+    "completion_tokens": 84064,
+    "prompt_tokens": 731931,
+    "total_tokens": 815995
+  },
+  "qa_and_smoke_requested_or_returned_models": {
+    "Qwen/Qwen3-30B-A3B-Instruct-2507": 323,
+    "text-embedding-3-small": 323
+  },
+  "qa_and_smoke_trace_statuses": {
+    "completed": 646
+  },
+  "judge_usage": {
+    "completion_tokens": 1926,
+    "prompt_tokens": 205167,
+    "total_tokens": 207093
+  },
+  "failure_categories_main": {
+    "dense_top20_missing_some_or_all_gold": 52,
+    "gold_in_final_context_but_answer_wrong": 23
+  }
+}

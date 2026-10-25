@@ -16,11 +16,11 @@ assert {n.name for n in funcs}==names
 ns={'np':np,'regex':regex,'string':string,'Counter':Counter,'ps':PorterStemmer()}
 exec(compile(ast.Module(body=funcs,type_ignores=[]),str(source),'exec'),ns)
 import gzip,argparse
-p=argparse.ArgumentParser(description=__doc__);p.add_argument('--out',type=Path,required=True);args=p.parse_args()
+p=argparse.ArgumentParser(description=__doc__);p.add_argument('--out',type=Path,required=True);p.add_argument('--results',type=Path,help='Optional new TSM QA JSON or gzip; default is archived historical QA');args=p.parse_args()
 if args.out.exists():raise SystemExit('Output exists')
 args.out.mkdir(parents=True)
-respath=root/'results/full/qa_results.json.gz'
-result_bytes=gzip.decompress(respath.read_bytes())
+respath=args.results or root/'results/full/qa_results.json.gz'
+result_bytes=gzip.decompress(respath.read_bytes()) if respath.suffix=='.gz' else respath.read_bytes()
 data=json.loads(result_bytes); rows=[r for v in data.values() if isinstance(v,list) for r in v]
 ann={r['qid']:r for r in csv.DictReader(open(root/'selection/annotations_locomo1986.csv')) if r['dataset']=='locomo'}
 gold={r['question_id']:{'question':r['question'],'answer':r['answer'],'category':int(ann[r['question_id']]['official_type'])} for r in rows}

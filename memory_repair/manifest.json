@@ -16,8 +16,8 @@
   "code_snapshot_note": "Includes existing provider/trace changes as used by the experiment; code_worktree.patch plus the two explicitly included adapters describe changes beyond repair_commit.",
   "files": {
     "HANDOFF_ZH.md": {
-      "sha256": "65f7ac3767d4fb1dd87340a3f4e7c9e6fccaeae24fceba125900fdc7089e8f56",
-      "bytes": 11056
+      "sha256": "c3ee8ae00e6177aee14e6a2ca315288d5298ac1684fafbcfd6cdc7784e0d3a97",
+      "bytes": 11196
     },
     "README.md": {
       "sha256": "c4a06744fe0c3d1da1097eafc50409ff73096bbb7d7cb43d1e923905e8a56444",

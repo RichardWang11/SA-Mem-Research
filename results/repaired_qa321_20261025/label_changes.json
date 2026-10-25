@@ -1,0 +1,1928 @@
+[
+  {
+    "qid": "conv-26_11",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-26_31",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-26_33",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-26_35",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-26_40",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-26_45",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-26_85",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-26_112",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-26_118",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-26_135",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-26_137",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-26_138",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-26_153",
+    "subset": "adversarial",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-26_175",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-30_47",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-30_63",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-30_65",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-30_66",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-30_87",
+    "subset": "adversarial",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-30_96",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-30_99",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_0",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-41_68",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-41_69",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-41_74",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_84",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_85",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_87",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-41_88",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-41_90",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_91",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-41_95",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-41_97",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_98",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_101",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_103",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_107",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-41_110",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-41_115",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_120",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_122",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_123",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_128",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-41_131",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_133",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_137",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_138",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_139",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_142",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_143",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_144",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_145",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_149",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-41_151",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-41_153",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_175",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_185",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_188",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-41_189",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_9",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_16",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_17",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-42_18",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_21",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_32",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_65",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_73",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-42_84",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_97",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_99",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_103",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_105",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-42_106",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_117",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_118",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_122",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_124",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_125",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_126",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_127",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-42_133",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_136",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_140",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_149",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_160",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_162",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-42_164",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_176",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_179",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_182",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_183",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_186",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_187",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_188",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_192",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_198",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_207",
+    "subset": "adversarial",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-42_210",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-42_216",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_217",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_222",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_228",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_236",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-42_238",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_248",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-42_249",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_252",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-42_253",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-42_256",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-43_24",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-43_32",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_45",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_46",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_48",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_59",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-43_71",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_75",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-43_76",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-43_91",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_92",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_95",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-43_130",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_134",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-43_136",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-43_137",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_138",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_141",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_145",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_147",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_148",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_149",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_150",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_151",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-43_156",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_174",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_175",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-43_177",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-43_178",
+    "subset": "adversarial",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_182",
+    "subset": "adversarial",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-43_192",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_195",
+    "subset": "adversarial",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-43_217",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_218",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_224",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-43_225",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-43_226",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-43_240",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-44_8",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-44_22",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-44_45",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-44_46",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-44_58",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-44_70",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-44_77",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-44_78",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-44_79",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-44_80",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-44_81",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-44_85",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-44_99",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-44_114",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-44_115",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-44_117",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-44_128",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-44_132",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-44_133",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-44_137",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_1",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_8",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_11",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_12",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_20",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_30",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_32",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_34",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_38",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_56",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_61",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_72",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_74",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_75",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_78",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_82",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_88",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_90",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_101",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_103",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_111",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_126",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_132",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_141",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_142",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_143",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_144",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_146",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_148",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_150",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_153",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_156",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_162",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_163",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_167",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_175",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_182",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-47_183",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_184",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_185",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_187",
+    "subset": "adversarial",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-47_188",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-48_0",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_7",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-48_26",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-48_28",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-48_61",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_65",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-48_78",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-48_93",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_100",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_102",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_105",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-48_106",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-48_108",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_109",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_110",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_121",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-48_129",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_133",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-48_165",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_167",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_168",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_169",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_173",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_174",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-48_175",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-48_184",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_189",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_198",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_199",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_208",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_227",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-48_228",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-48_232",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-48_235",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-48_238",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-49_4",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_5",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_6",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-49_24",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_41",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_45",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-49_52",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_54",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-49_57",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_60",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-49_61",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_68",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-49_69",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_72",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_85",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_87",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_102",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_103",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_104",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-49_105",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_109",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-49_110",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_116",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_119",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-49_122",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_125",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_127",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_133",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_134",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_146",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_148",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_158",
+    "subset": "adversarial",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-49_159",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-49_168",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_169",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_176",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_177",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-49_180",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-49_184",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-49_189",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-49_191",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_1",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-50_27",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-50_31",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-50_42",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_43",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_48",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_56",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-50_57",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_67",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-50_72",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_73",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_74",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_75",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_82",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_85",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_87",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_89",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_92",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_94",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_101",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-50_106",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_108",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-50_113",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_122",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_146",
+    "subset": "main",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_150",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_153",
+    "subset": "main",
+    "before": "WRONG",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_158",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_160",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_164",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_169",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_172",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-50_177",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_179",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "WRONG"
+  },
+  {
+    "qid": "conv-50_187",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  },
+  {
+    "qid": "conv-50_199",
+    "subset": "adversarial",
+    "before": "CORRECT",
+    "after": "CORRECT"
+  }
+]

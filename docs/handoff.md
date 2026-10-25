@@ -4,7 +4,7 @@
 2. 阅读results.md、provenance.md；确认没有将F1写成论文Accuracy，也没有将离线排名投影写成QA救回。
 3. 如需在线复跑，先dry-run确认profile；默认官方仓库batch8，历史结果使用batch1。
 4. 2026-10-25 用户授权修复 Dense Tree 构建错误。当前 TSM 源码已合入修复，历史运行记录保留。接手复用完整 Memory 时优先阅读 [Memory 恢复与全量查询交接](../memory_repair/HANDOFF_ZH.md)；不要把修复后的结果与历史损坏建库结果混用。Query 时间解析和检索架构未改。
-5. 论文口径GPT-4.1-mini Judge待执行。Adversarial单独评估，不能把空参考答案直接套进主评测Judge。接手前先明确付费规模和Judge配置，保存所有请求与逐题标签。
+5. 修复后321题QA与Mem0提示词+gpt-4o-mini Judge已完成，详见results/repaired_qa321_20261025/REPORT.md。论文口径GPT-4.1-mini Judge仍待执行。Adversarial单独评估，不能把空参考答案直接套进主评测Judge。接手前先明确付费规模和Judge配置，保存所有请求与逐题标签。
 6. 继续找H1必须区分：库内Dense Miss、建库时未进入索引、Parser/图谱时间错误、Gold标注遗漏补充证据。不能把mapping_unknown算Recall失败。
 
 ## 常用入口
