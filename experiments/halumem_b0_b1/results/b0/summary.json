@@ -1,0 +1,60 @@
+{
+  "status": "corrected_embedding_retrieval_qa",
+  "dataset": "HaluMem-Medium",
+  "users": 10,
+  "sessions": 680,
+  "messages": 29722,
+  "questions": 1722,
+  "config": {
+    "llm": "gpt-4o-mini",
+    "embedding": "text-embedding-3-small",
+    "retrieval_top_k": 20,
+    "qa_context_top_k": 20,
+    "qa_repeats": 1,
+    "embedding_base_path_normalized": true
+  },
+  "construction": {
+    "rerun": null,
+    "new_provider_tokens": null,
+    "subset_exact_provider_attribution_available": null,
+    "subset_estimate_method": null,
+    "variants": {
+      "b0": {
+        "memory_units": 2434,
+        "source_memory_units": 4960,
+        "source_total_tokens": 39896051,
+        "estimated_subset_tokens": 19578022
+      }
+    }
+  },
+  "embedding_health": {
+    "b0": {
+      "requests": 4019,
+      "vector_files": 10,
+      "vectors": 4019,
+      "zero_vectors": 0,
+      "dimension": 1536
+    }
+  },
+  "retrieval": {
+    "denominator": null,
+    "metric_type": null,
+    "b0": {
+      "hit_at_1": 0.35248447204968947,
+      "hit_at_5": 0.547360248447205,
+      "hit_at_10": 0.6141304347826086,
+      "hit_at_20": 0.6855590062111802,
+      "mrr": 0.44788857391507725,
+      "mean_gold_rank": 32.850155279503106
+    }
+  },
+  "qa": {
+    "b0": {
+      "correct": 928,
+      "accuracy": 0.5389082462253194,
+      "hallucination": 364,
+      "omission": 430,
+      "qa_judge_tokens": 16773823
+    }
+  }
+}

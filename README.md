@@ -181,3 +181,9 @@ Useful evaluation options:
 - `--sample-size`: evaluate only the first N samples.
 - `--eval-output`: custom detailed evaluation output path.
 - `--summary-output`: custom summary output path.
+
+## HaluMem B0/B1 baseline
+
+The isolated HaluMem B0/B1 code snapshots and results are documented in:
+
+[experiments/halumem_b0_b1/](experiments/halumem_b0_b1/)

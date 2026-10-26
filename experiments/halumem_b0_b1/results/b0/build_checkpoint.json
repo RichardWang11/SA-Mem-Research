@@ -1,0 +1,36 @@
+{
+  "run_id": "halumem_b0",
+  "raw_data_dir": "/workspace/SA-mem/halumem-b0-b3-runs-10user-v2/metadata/processed_halumem_iso",
+  "raw_data_glob": "*.json",
+  "created_at": "2026-10-06T12:02:41.380454+00:00",
+  "updated_at": "2026-10-06T12:02:41.380469+00:00",
+  "next_file_index": 10,
+  "processed_files": [
+    "/workspace/SA-mem/halumem-b0-b3-runs-10user-v2/metadata/processed_halumem_iso/1b846c59-456e-9550-dffd-4d23f1eca81f.json",
+    "/workspace/SA-mem/halumem-b0-b3-runs-10user-v2/metadata/processed_halumem_iso/2e36c193-a605-8cc7-70ff-80b2336d4980.json",
+    "/workspace/SA-mem/halumem-b0-b3-runs-10user-v2/metadata/processed_halumem_iso/2f1f897e-d67f-dbc5-6a7b-b7634a9e294f.json",
+    "/workspace/SA-mem/halumem-b0-b3-runs-10user-v2/metadata/processed_halumem_iso/2f4b4206-20bc-19a5-a5ed-4d110f91f4db.json",
+    "/workspace/SA-mem/halumem-b0-b3-runs-10user-v2/metadata/processed_halumem_iso/348492a7-cfe4-ee1d-73c3-c276d6ba8277.json",
+    "/workspace/SA-mem/halumem-b0-b3-runs-10user-v2/metadata/processed_halumem_iso/42f702e3-750c-1acc-9101-051f1f75991e.json",
+    "/workspace/SA-mem/halumem-b0-b3-runs-10user-v2/metadata/processed_halumem_iso/4fd09df4-d0df-ff7e-bb39-5f4faedfac2c.json",
+    "/workspace/SA-mem/halumem-b0-b3-runs-10user-v2/metadata/processed_halumem_iso/52e6d9cd-f63e-4065-cbaf-a20347590e07.json",
+    "/workspace/SA-mem/halumem-b0-b3-runs-10user-v2/metadata/processed_halumem_iso/5c005ed8-0d18-99f8-a20e-6a776a7ea30a.json",
+    "/workspace/SA-mem/halumem-b0-b3-runs-10user-v2/metadata/processed_halumem_iso/6106afc1-6ad6-c821-3f0f-b491e3e0b833.json"
+  ],
+  "user_id_next": 0,
+  "reused_from_run": "/workspace/SA-mem/halumem-b0-b3-runs-v2/variants/halumem_b0",
+  "reused_source_checkpoint_updated_at": "2026-10-05T19:42:08.993698",
+  "reused_source_files": [
+    "1b846c59-456e-9550-dffd-4d23f1eca81f.json",
+    "2e36c193-a605-8cc7-70ff-80b2336d4980.json",
+    "2f1f897e-d67f-dbc5-6a7b-b7634a9e294f.json",
+    "2f4b4206-20bc-19a5-a5ed-4d110f91f4db.json",
+    "348492a7-cfe4-ee1d-73c3-c276d6ba8277.json",
+    "42f702e3-750c-1acc-9101-051f1f75991e.json",
+    "4fd09df4-d0df-ff7e-bb39-5f4faedfac2c.json",
+    "52e6d9cd-f63e-4065-cbaf-a20347590e07.json",
+    "5c005ed8-0d18-99f8-a20e-6a776a7ea30a.json",
+    "6106afc1-6ad6-c821-3f0f-b491e3e0b833.json"
+  ],
+  "construction_token_attribution": "not available per source file in original aggregate construction_calls.jsonl"
+}
