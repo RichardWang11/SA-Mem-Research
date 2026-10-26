@@ -1,0 +1,18 @@
+{
+  "variant": "b1",
+  "repeats": 1,
+  "questions": 1722,
+  "repeat_results": [
+    {
+      "repeat": 1,
+      "questions": 1722,
+      "correct": 947,
+      "accuracy": 0.5499419279907085,
+      "hallucination": 370,
+      "omission": 405,
+      "error": 0
+    }
+  ],
+  "mean_accuracy": 0.5499419279907085,
+  "std_accuracy": 0.0
+}

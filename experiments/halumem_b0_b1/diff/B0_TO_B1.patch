@@ -1,0 +1,1093 @@
+diff --git a/build_impl_graph.py b/build_impl_graph.py
+index cd6cb2b..73858dc 100644
+--- a/build_impl_graph.py
++++ b/build_impl_graph.py
+@@ -1,6 +1,9 @@
+ 
+ import json
+ import os
++import re
++import time
++from datetime import datetime
+ from typing import Any, Dict, List, Tuple
+ 
+ from sklearn.metrics.pairwise import cosine_similarity
+@@ -14,6 +17,47 @@ from graph_storage import (
+ )
+ 
+ 
++_RELATIVE_TEMPORAL_RE = re.compile(
++    r"(?:"
++    r"\b(?:today|yesterday|tomorrow|tonight|now|recently|lately|currently|"
++    r"presently|previously|earlier|later|soon|the\s+other\s+day)\b"
++    r"|\b(?:this|last|next|previous|prior|following|upcoming)\s+"
++    r"(?:week|weekend|month|year|decade|century|morning|afternoon|evening|"
++    r"night|day|monday|tuesday|wednesday|thursday|friday|saturday|sunday|"
++    r"quarter|season|summer|spring|fall|winter)\b"
++    r"|\b(?:past|recent)\s+(?:day|week|month|year|decade|century|"
++    r"days|weeks|months|years|decades|centuries)\b"
++    r"|\b(?:a|an|one|two|three|four|five|six|seven|eight|nine|ten|"
++    r"a\s+few|a\s+couple|several|"
++    r"\d+)\s+(?:day|days|week|weeks|month|months|year|years)\s+"
++    r"(?:ago|from\s+now|before|later)\b"
++    r"|\b(?:in|within|by)\s+(?:a|an|one|two|three|four|five|six|seven|"
++    r"eight|nine|ten|\d+)\s+(?:day|days|week|weeks|month|months|year|years)\b"
++    r"|\b(?:earlier|later)\s+(?:today|this\s+week|this\s+month|this\s+year)\b"
++    r")",
++    re.IGNORECASE,
++)
++
++
++def needs_temporal_tool(block_text: str) -> bool:
++    """Return whether a raw block should retain B0 temporal tool calling.
++
++    This is deliberately a high-recall lexical gate.  A false positive only
++    forfeits a possible token saving; a false negative could change temporal
++    semantics.  The function is local-only and never sends block text to an
++    LLM or changes the Pass1/Pass2 schemas.
++    """
++    return bool(_RELATIVE_TEMPORAL_RE.search(str(block_text or "")))
++
++
++def temporal_gate_decision(block_text: str) -> Tuple[bool, str]:
++    """Return the B2 gate decision and an auditable local reason."""
++    match = _RELATIVE_TEMPORAL_RE.search(str(block_text or ""))
++    if match:
++        return True, f"relative_temporal_expression:{match.group(0)}"
++    return False, "no_relative_temporal_expression_detected"
++
++
+ def _mx():
+     """
+     Lazy import to avoid circular import:
+@@ -24,6 +68,140 @@ def _mx():
+     return mx
+ 
+ 
++def _temporal_observation_date(value: Any) -> str | None:
++    """Convert LongMemEval session timestamps to the resolver's ISO date input."""
++    text = str(value or "").strip()
++    if not text:
++        return None
++    match = re.search(r"(\d{4})[/-](\d{1,2})[/-](\d{1,2})", text)
++    if not match:
++        return None
++    try:
++        return datetime(
++            int(match.group(1)), int(match.group(2)), int(match.group(3))
++        ).strftime("%Y-%m-%d")
++    except ValueError:
++        return None
++
++
++def _resolve_local_temporal_mentions(
++    *,
++    worker: Any,
++    mentions: List[str],
++    temporal_expressions: Any,
++    observation_time: Any,
++) -> Tuple[List[str], bool]:
++    """Resolve Pass-1 temporal annotations locally, with explicit fallback signals.
++
++    The helper never changes the event schema.  It only appends the resolver's
++    human-readable date annotation to the matching Pass-1 mention, which is
++    exactly the input shape consumed by the existing Pass-2 classifier.
++    """
++    if temporal_expressions in (None, []):
++        return mentions, True
++    if not isinstance(temporal_expressions, list):
++        worker._log_local_construction_stage(
++            success=False,
++            metadata={"fallback_used": True, "reason": "temporal_expressions_not_list"},
++        )
++        return mentions, False
++
++    observation_date = _temporal_observation_date(observation_time)
++    if not observation_date:
++        worker._log_local_construction_stage(
++            success=False,
++            metadata={"fallback_used": True, "reason": "invalid_observation_time"},
++        )
++        return mentions, False
++
++    resolved_mentions = list(mentions)
++    seen_indices = set()
++    for item in temporal_expressions:
++        started = time.perf_counter()
++        expression = ""
++        mention_index = None
++        try:
++            if not isinstance(item, dict):
++                raise ValueError("temporal expression entry is not an object")
++            expression = str(item.get("expression", "") or "").strip()
++            mention_index = item.get("mention_index")
++            if isinstance(mention_index, bool):
++                raise ValueError("mention_index must be an integer")
++            mention_index = int(mention_index)
++            if mention_index < 0 or mention_index >= len(resolved_mentions):
++                raise IndexError("mention_index outside mentions")
++            if mention_index in seen_indices:
++                raise ValueError("duplicate mention_index")
++            if not expression:
++                raise ValueError("empty temporal expression")
++
++            result = _mx().resolve_temporal_expression(observation_date, expression)
++            if not isinstance(result, dict) or result.get("warning"):
++                raise ValueError(str((result or {}).get("warning", "unresolved expression")))
++            resolved_expression = str(result.get("resolved_expression", "") or "").strip()
++            if not resolved_expression:
++                raise ValueError("resolver returned no resolved expression")
++
++            if resolved_expression not in resolved_mentions[mention_index]:
++                resolved_mentions[mention_index] = (
++                    f"{resolved_mentions[mention_index]} ({resolved_expression})"
++                )
++            seen_indices.add(mention_index)
++            worker._log_local_construction_stage(
++                success=True,
++                latency_sec=time.perf_counter() - started,
++                metadata={
++                    "expression": expression,
++                    "mention_index": mention_index,
++                    "resolved_expression": resolved_expression,
++                    "fallback_used": False,
++                },
++            )
++        except Exception as error:
++            worker._log_local_construction_stage(
++                success=False,
++                latency_sec=time.perf_counter() - started,
++                metadata={
++                    "expression": expression,
++                    "mention_index": mention_index,
++                    "fallback_used": True,
++                },
++                error=error,
++            )
++            return mentions, False
++    return resolved_mentions, True
++
++
++def _temporal_annotations_cover_mentions(
++    mentions: List[str], temporal_expressions: Any
++) -> bool:
++    """Require every relative expression in a mention to be explicitly mapped."""
++    if not isinstance(temporal_expressions, list):
++        return False
++    specs_by_index: Dict[int, List[str]] = {}
++    for item in temporal_expressions:
++        if not isinstance(item, dict):
++            continue
++        try:
++            index = int(item.get("mention_index"))
++        except (TypeError, ValueError):
++            continue
++        specs_by_index.setdefault(index, []).append(
++            str(item.get("expression", "") or "").strip().lower()
++        )
++    for index, mention in enumerate(mentions):
++        expressions = [x.lower() for x in _RELATIVE_TEMPORAL_RE.findall(mention)]
++        if not expressions:
++            continue
++        specs = specs_by_index.get(index, [])
++        if not specs:
++            return False
++        for expression in expressions:
++            if not any(expression in spec or spec in expression for spec in specs if spec):
++                return False
++    return True
++
++
+ def _load_event_vector_cache(store: Any) -> Dict[str, List[float]]:
+     cache: Dict[str, List[float]] = {}
+     for key, fields in (store.data or {}).items():
+@@ -245,20 +423,58 @@ class TopicClusterManager:
+                     )
+ 
+         else:
+-            # ✅ PASS 1: Extract mentions (strings only, no classification)
+-            ps1_prompt = (
+-                mx.Config.PROMPT_DIALOG_EXTRACT
+-                .replace("{text}", content_str)
++            # ✅ PASS 1: Extract mentions (strings only, no classification).
++            # The default branch below is intentionally preserved.  The
++            # experimental branch makes one JSON-only call, then resolves
++            # explicitly identified relative expressions locally.
++            original_ps1_prompt = (
++                mx.Config.PROMPT_DIALOG_EXTRACT.replace("{text}", content_str)
++            )
++            b2_temporal_gate = bool(
++                getattr(mx.Config, "ENABLE_TEMPORAL_GATE_B2", False)
+             )
++            local_temporal = bool(
++                getattr(mx.Config, "ENABLE_LOCAL_TEMPORAL_RESOLUTION", False)
++            ) and not b2_temporal_gate
++
++            # B2 keeps the original prompt and output schema.  Its only
++            # behavior change is the local decision to force tool_choice=none
++            # for blocks with no detected relative temporal expression.
++            gate_on = True
++            gate_reason = "b2_disabled_original_path"
++            tool_choice_override = None
++            if b2_temporal_gate:
++                gate_on, gate_reason = temporal_gate_decision(content_str)
++                tool_choice_override = None if gate_on else "none"
++
++            self.worker._temporal_gate_on = gate_on if b2_temporal_gate else None
++            self.worker._temporal_gate_reason = gate_reason if b2_temporal_gate else None
++            self.worker._temporal_tool_called = False
++            self.worker._pass1_tool_followup = False
++
++            ps1_prompt = (
++                mx.Config.PROMPT_DIALOG_EXTRACT_LOCAL_TEMPORAL
++                if local_temporal
++                else mx.Config.PROMPT_DIALOG_EXTRACT
++            ).replace("{text}", content_str)
+ 
+             ps1_raw = self.worker.chat_completion(
+                 ps1_prompt,
+                 note=f"{prefix}_NotePS1_Extract",
+                 json_mode=True,
+-                enable_functions=True,  # Enable temporal resolution function calling
++                enable_functions=(True if b2_temporal_gate else not local_temporal),
++                tool_choice_override=tool_choice_override,
+                 extra={"prompt_tokens_est": self.worker.count_tokens(ps1_prompt), "stage": "build"},
+             )
+ 
++            if b2_temporal_gate:
++                self.worker._log_temporal_gate(
++                    gate_on=gate_on,
++                    reason=gate_reason,
++                    temporal_tool_called=self.worker._temporal_tool_called,
++                    pass1_tool_followup=self.worker._pass1_tool_followup,
++                )
++
+             # 🔍 [DEBUG FIX] Detect empty response and log warning
+             if not ps1_raw or not str(ps1_raw).strip():
+                  mx.logger.warning(f"⚠️ [WARN] Box {new_box['box_id']}: LLM returned EMPTY response (Pass 1). Likely timeout/rate-limit. Fallback triggered.")
+@@ -266,6 +482,9 @@ class TopicClusterManager:
+                  # Verify LLM output for first few boxes
+                  mx.logger.info(f"🔍 [DEBUG] Box {new_box['box_id']} Pass 1 raw output (first 500 chars): {str(ps1_raw)[:500]}...")
+ 
++            parsed_pass1 = False
++            temporal_expressions: Any = []
++            local_fallback = False
+             try:
+                 d = mx.json.loads(ps1_raw)
+                 topic = str(d.get("topic", "") or "").strip()
+@@ -281,11 +500,77 @@ class TopicClusterManager:
+                     mentions = [str(m).strip() for m in mns if str(m).strip()]
+                 else:
+                     mentions = []
++                temporal_expressions = d.get("temporal_expressions", [])
++                parsed_pass1 = True
+             except Exception as e:
+                 # 🔍 [DEBUG FIX] Catch JSON parse failures
+                 if ps1_raw and str(ps1_raw).strip():
+                     mx.logger.error(f"❌ [ERROR] Box {new_box['box_id']} Pass 1 JSON parse failed: {e}. Raw: {str(ps1_raw)[:50]}")
+-                pass
++                if local_temporal:
++                    local_fallback = True
++
++            if local_temporal and parsed_pass1 and not local_fallback:
++                if not _temporal_annotations_cover_mentions(mentions, temporal_expressions):
++                    local_fallback = True
++                    self.worker._log_local_construction_stage(
++                        success=False,
++                        metadata={
++                            "fallback_used": True,
++                            "reason": "unmapped_relative_expression",
++                        },
++                    )
++                else:
++                    mentions, resolved_ok = _resolve_local_temporal_mentions(
++                        worker=self.worker,
++                        mentions=mentions,
++                        temporal_expressions=temporal_expressions,
++                        observation_time=session_end_time,
++                    )
++                    if not resolved_ok:
++                        local_fallback = True
++
++            # A malformed local output or an unsupported expression must use
++            # the original tool-calling path.  The fallback is explicit in
++            # the construction log and never silently uses the resolver's
++            # warning-date fallback.
++            if local_temporal and local_fallback:
++                self.worker._log_local_construction_stage(
++                    success=False,
++                    metadata={"fallback_used": True, "reason": "original_pass1_fallback"},
++                )
++                fallback_extra = {
++                    "prompt_tokens_est": self.worker.count_tokens(original_ps1_prompt),
++                    "stage": "build",
++                    "followup_stage_override": "pass1_tool_followup_fallback",
++                }
++                ps1_raw = self.worker.chat_completion(
++                    original_ps1_prompt,
++                    note=f"{prefix}_NotePS1_Extract",
++                    json_mode=True,
++                    enable_functions=True,
++                    extra=fallback_extra,
++                )
++                try:
++                    d = mx.json.loads(ps1_raw)
++                    topic = str(d.get("topic", "") or "").strip()
++                    kws = d.get("keywords", [])
++                    if isinstance(kws, list):
++                        keywords_txt = ", ".join(
++                            [str(k).strip() for k in kws if str(k).strip()]
++                        )
++                    else:
++                        keywords_txt = str(kws).strip()
++                    mns = d.get("mentions", [])
++                    mentions = (
++                        [str(m).strip() for m in mns if str(m).strip()]
++                        if isinstance(mns, list)
++                        else []
++                    )
++                except Exception as e:
++                    if ps1_raw and str(ps1_raw).strip():
++                        mx.logger.error(
++                            f"❌ [ERROR] Box {new_box['box_id']} fallback Pass 1 JSON parse failed: {e}. Raw: {str(ps1_raw)[:50]}"
++                        )
+ 
+             # ✅ PASS 2: Classify mentions and assign temporal metadata
+             if mentions:
+@@ -758,6 +1043,9 @@ class MemoryBuilder:
+         for i, sample in enumerate(mx._tqdm(raw_list, total=len(raw_list), desc="BUILD haystack QA conversations")):
+             user_id = user_id_start + i
+             question_id = str((sample or {}).get("question_id", "") or "").strip()
++            # Sidecar-only metadata for construction token accounting.
++            self.worker._construction_user_id = user_id
++            self.worker._construction_question_id = question_id
+ 
+             if mx._is_main_thread():
+                 display_id = question_id or user_id
+@@ -880,6 +1168,9 @@ class MemoryBuilder:
+         prev_msgs = [f"{m['role']}: {m['text']}" for m in prev_slice]
+ 
+         curr_msg_str = f"{msg['role']}: {msg['text']}"
++        self.worker._construction_user_id = user_id
++        self.worker._construction_session_id = session_id
++        self.worker._construction_block_id = None
+         res = self.worker.check_relation(prev_msgs, curr_msg_str, note=f"U{user_id}_Overhead_Split")
+ 
+         mx.TraceLogger.log(
+@@ -933,6 +1224,9 @@ class MemoryBuilder:
+             "persona_name": meta.get("persona_name", None),
+         }
+ 
++        self.worker._construction_user_id = user_id
++        self.worker._construction_session_id = session_id
++        self.worker._construction_block_id = self.bid
+         self.cluster.process_new_box(raw_box, user_id)
+ 
+         content_text = self.cluster._get_content_str(raw_box)
+@@ -1287,4 +1581,4 @@ class MemoryBuilder:
+             llm_stats.get("prompt", 0),
+             llm_stats.get("completion", 0),
+             llm_stats.get("total", 0),
+-        )
+\ No newline at end of file
++        )
+diff --git a/build_prompts.py b/build_prompts.py
+index 96e4a6a..0d19168 100644
+--- a/build_prompts.py
++++ b/build_prompts.py
+@@ -70,6 +70,50 @@ Content to analyze:
+ {text}
+ """
+ 
++# Experimental Pass 1 variant.  The default prompt above is intentionally
++# untouched: it preserves the original function-calling baseline.  This
++# variant asks the model to identify relative expressions and map them to the
++# raw mention strings, while date arithmetic remains local and deterministic.
++PROMPT_DIALOG_EXTRACT_LOCAL_TEMPORAL = """Generate a structured analysis of the provided dialog.
++
++The dialog includes a session window line: "Session window: <session_start> -> <session_end>".
++Treat session_end as the observation time.  It may also contain timestamps and
++a Persona info line.
++
++Return:
++1) 3-8 specific salient keywords;
++2) one clear core topic phrase;
++3) ALL atomic, directly grounded memory mentions as standalone sentences;
++4) a list of relative temporal expressions that occur in the extracted
++   mentions.  Do not resolve dates yourself and do not call any tool.
++
++Extraction rules:
++- Keep every mention verbatim or near-verbatim grounded in the dialog/persona.
++- Do not infer facts or merge multiple facts into one mention.
++- Include explicit traits, emotions, preferences and their stated reasons,
++  relationships, reflections, past events, future plans, and every persona
++  field as separate mentions.
++- Use the person's name when available; otherwise use User.
++- Preserve the original relative wording in the mention.
++- For each temporal expression, provide the zero-based mention_index of the
++  mention containing it and the exact expression text.  Include only explicit
++  relative expressions such as "yesterday", "last week", "last Sunday", or
++  "last month".  If there are no such expressions, return an empty list.
++
++Output valid JSON with exactly these keys:
++{
++  "keywords": ["keyword1", "keyword2"],
++  "topic": "topic phrase",
++  "mentions": ["One atomic mention sentence"],
++  "temporal_expressions": [
++    {"mention_index": 0, "expression": "last Sunday"}
++  ]
++}
++
++Content to analyze:
++{text}
++"""
++
+ # MERGED: One-shot extract+classify+time. Replaces the (PASS 1 + PASS 2)
+ # two-call pipeline when Config.ENABLE_MERGED_EXTRACTION is True.
+ # Outputs the union of PASS 1 fields (keywords, topic) and PASS 2 fields
+@@ -207,4 +251,4 @@ Return a valid JSON object with the following exact key:
+ 
+ Mentions JSON:
+ {mentions_json}
+-"""
+\ No newline at end of file
++"""
+diff --git a/memblock_extractor.py b/memblock_extractor.py
+index abf772e..5f61892 100644
+--- a/memblock_extractor.py
++++ b/memblock_extractor.py
+@@ -14,18 +14,19 @@ from collections import defaultdict
+ from datetime import datetime, timezone
+ from typing import List, Dict, Any, Tuple, Iterable
+ 
+-import tiktoken
+-from openai import OpenAI
+-from sklearn.metrics.pairwise import cosine_similarity
+-from build_prompts import (
+-    PROMPT_MSG_CONTINUATION,
+-    PROMPT_DIALOG_EXTRACT,
+-    PROMPT_DIALOG_CLASSIFICATION,
+-    PROMPT_DIALOG_EXTRACT_MERGED,
+-)
+-from generate_prompts import PROMPT_QA_ANSWER as PROMPT_QA_ANSWER_GEN
+-from temporal_resolution_tool import resolve_temporal_expression, TEMPORAL_RESOLUTION_FUNCTION_SCHEMA
+-import sys
++import tiktoken
++from openai import OpenAI
++from sklearn.metrics.pairwise import cosine_similarity
++from build_prompts import (
++    PROMPT_MSG_CONTINUATION,
++    PROMPT_DIALOG_EXTRACT,
++    PROMPT_DIALOG_EXTRACT_LOCAL_TEMPORAL,
++    PROMPT_DIALOG_CLASSIFICATION,
++    PROMPT_DIALOG_EXTRACT_MERGED,
++)
++from generate_prompts import PROMPT_QA_ANSWER as PROMPT_QA_ANSWER_GEN
++from temporal_resolution_tool import resolve_temporal_expression, TEMPORAL_RESOLUTION_FUNCTION_SCHEMA
++import sys
+ if __name__ == "__main__":
+     sys.modules.setdefault("memblock_extractor", sys.modules[__name__])
+ def _event_line_to_obj(line: str) -> Dict[str, str]:
+@@ -401,36 +402,40 @@ def _save_topic_cache_atomic(path: str, cache: Dict[str, Dict[str, Any]]) -> Non
+     with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+         json.dump(cache, f, ensure_ascii=False, indent=2)
+     os.replace(tmp, path)
+-
+-
+-# ================= 1. 全局配置 =================
+-class Config:
+-    LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openai").strip().lower()
+-
+-    # Prefer environment variables; can also be overridden by CLI flags.
++
++
++# ================= 1. 全局配置 =================
++class Config:
++    LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openai").strip().lower()
++
++    # Prefer environment variables; can also be overridden by CLI flags.
+     # Credentials and provider endpoints must be supplied at runtime.
+     API_KEY = os.environ.get("OPENAI_API_KEY", "")
+     BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+     OLLAMA_API_KEY = os.environ.get("OLLAMA_API_KEY", "ollama")
+-    OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+-
+-    RAW_DATA_FILE = "/data/locomo/data/locomo10.json"
+-    OUTPUT_BASE_DIR = "out"
+-    RUN_ID: str | None = "locomo"
+-
+-    # 路径会在 apply_run_id 时按 run_id 重写
++    OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
++
++    RAW_DATA_FILE = "/data/locomo/data/locomo10.json"
++    OUTPUT_BASE_DIR = os.environ.get("SA_MEM_OUTPUT_BASE_DIR", "out")
++    RUN_ID: str | None = "locomo"
++
++    # 路径会在 apply_run_id 时按 run_id 重写
+     OUTPUT_DIR = OUTPUT_BASE_DIR
+     # Use reindexed file with conversation-level user_ids for LoCoMo
+     FINAL_CONTENT_FILE = os.path.join(OUTPUT_DIR, "final_boxes_content.jsonl")
+     VECTOR_DIR = os.path.join(OUTPUT_DIR, "vector_store")
+     SIMPLE_RETRIEVAL_JSONL = os.path.join(OUTPUT_DIR, "simple_retrieval.jsonl")
+-    SIMPLE_RETRIEVAL_CSV = os.path.join(OUTPUT_DIR, "simple_retrieval.csv")
+-    GENERATION_RESULT_FILE = os.path.join(OUTPUT_DIR, "generation_results.jsonl")
+-    GENERATION_REPORT_CSV = os.path.join(OUTPUT_DIR, "report_generation_qa.csv")
+-    TOKEN_LOG_FILE = os.path.join(OUTPUT_DIR, "token_stream.jsonl")
+-    BUILD_TRACE_FILE = os.path.join(OUTPUT_DIR, "trace_build_process.jsonl")
+-    TIME_TRACE_FILE = os.path.join(OUTPUT_DIR, "time_traces.jsonl")
+-    TRACE_PROMPT_LOG_FILE = os.path.join(OUTPUT_DIR, "trace_prompts.jsonl")
++    SIMPLE_RETRIEVAL_CSV = os.path.join(OUTPUT_DIR, "simple_retrieval.csv")
++    GENERATION_RESULT_FILE = os.path.join(OUTPUT_DIR, "generation_results.jsonl")
++    GENERATION_REPORT_CSV = os.path.join(OUTPUT_DIR, "report_generation_qa.csv")
++    TOKEN_LOG_FILE = os.path.join(OUTPUT_DIR, "token_stream.jsonl")
++    # Optional sidecar for phase-1 construction token accounting. This is
++    # intentionally write-only instrumentation; it is never sent to a model.
++    CONSTRUCTION_CALLS_FILE = os.environ.get("CONSTRUCTION_CALLS_FILE", "")
++    TEMPORAL_GATE_LOG_FILE = os.environ.get("TEMPORAL_GATE_LOG_FILE", "")
++    BUILD_TRACE_FILE = os.path.join(OUTPUT_DIR, "trace_build_process.jsonl")
++    TIME_TRACE_FILE = os.path.join(OUTPUT_DIR, "time_traces.jsonl")
++    TRACE_PROMPT_LOG_FILE = os.path.join(OUTPUT_DIR, "trace_prompts.jsonl")
+     TRACE_STATS_FILE = os.path.join(OUTPUT_DIR, "trace_stats.jsonl")
+     BUILD_CHECKPOINT_FILE = os.path.join(OUTPUT_DIR, "build_checkpoint.json")
+     BUILD_STATS_FILE = os.path.join(OUTPUT_DIR, "build_stats.jsonl")
+@@ -451,15 +456,30 @@ class Config:
+     # PROMPT_DIALOG_EXTRACT_MERGED (combined Pass1 + Pass2). The output
+     # already contains description/type/start_time/end_time per event, so
+     # the second classification call is skipped entirely.
+-    # Falls back to the original two-pass pipeline when False.
+-    # Read from env MEMBLOCK_MERGED_EXTRACTION (1/0) so we can flip without
+-    # editing code.
+-    ENABLE_MERGED_EXTRACTION = os.environ.get(
+-        "MEMBLOCK_MERGED_EXTRACTION", "0"
+-    ) not in ("0", "", "false", "False")
+-
+-    LIMIT_CONVERSATIONS = 2
+-    LIMIT_SESSIONS = None  # None 表示不限制
++    # Falls back to the original two-pass pipeline when False.
++    # Read from env MEMBLOCK_MERGED_EXTRACTION (1/0) so we can flip without
++    # editing code.
++    ENABLE_MERGED_EXTRACTION = os.environ.get(
++        "MEMBLOCK_MERGED_EXTRACTION", "0"
++    ) not in ("0", "", "false", "False")
++
++    # Experimental optimization: Pass 1 identifies relative expressions and
++    # the existing local resolver annotates them before Pass 2.  Keep this
++    # disabled by default so the original function-calling baseline remains
++    # byte-for-byte on its existing path.
++    ENABLE_LOCAL_TEMPORAL_RESOLUTION = os.environ.get(
++        "MEMBLOCK_LOCAL_TEMPORAL_RESOLUTION", "0"
++    ) not in ("0", "", "false", "False")
++
++    # B2: keep the original Pass1 prompt/function schema and decide locally
++    # only whether the temporal function may be called for this raw block.
++    # Disabled by default so B0 and B1 entry points remain unchanged.
++    ENABLE_TEMPORAL_GATE_B2 = os.environ.get(
++        "MEMBLOCK_TEMPORAL_GATE_B2", "0"
++    ) not in ("0", "", "false", "False")
++
++    LIMIT_CONVERSATIONS = 2
++    LIMIT_SESSIONS = None  # None 表示不限制
+     TOP_K_RETRIEVE = 20
+     TOP_K_GENERATE = 5
+     BUILD_PREV_MSGS = 2
+@@ -477,14 +497,16 @@ class Config:
+     # 生成阶段使用的 box 数量（答案上下文 TopN）
+     # 设置为20以与HaluMem基准保持一致（使用全部检索到的记忆块）
+     ANSWER_TOP_N = 20
+-    # 默认仅运行 content 文本模式，按需开启 trace 模式
+-    GEN_TEXT_MODES = ["content_trace_event"]
+-
+-    LLM_MODEL = "gpt-4o-mini"
+-    EMBEDDING_MODEL = "text-embedding-3-small"
+-    OLLAMA_LLM_MODEL = os.environ.get("OLLAMA_LLM_MODEL", "gpt-oss:120b")
+-    OLLAMA_EMBEDDING_MODEL = os.environ.get("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text:latest")
+-    OLLAMA_NUM_CTX = int(os.environ.get("OLLAMA_NUM_CTX", "0") or 0) or None
++    # 默认仅运行 content 文本模式，按需开启 trace 模式
++    GEN_TEXT_MODES = ["content_trace_event"]
++
++    LLM_MODEL = "gpt-4o-mini"
++    EMBEDDING_MODEL = "text-embedding-3-small"
++    API_MAX_RETRIES = int(os.environ.get("API_MAX_RETRIES", "5"))
++    API_RETRY_BACKOFF_BASE = float(os.environ.get("API_RETRY_BACKOFF_BASE", "0.5"))
++    OLLAMA_LLM_MODEL = os.environ.get("OLLAMA_LLM_MODEL", "gpt-oss:120b")
++    OLLAMA_EMBEDDING_MODEL = os.environ.get("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text:latest")
++    OLLAMA_NUM_CTX = int(os.environ.get("OLLAMA_NUM_CTX", "0") or 0) or None
+     OLLAMA_NUM_PREDICT = int(os.environ.get("OLLAMA_NUM_PREDICT", "0") or 0) or None
+ 
+     @classmethod
+@@ -500,15 +522,16 @@ class Config:
+         return cls.OLLAMA_BASE_URL if cls.LLM_PROVIDER == "ollama" else cls.BASE_URL
+ 
+     @classmethod
+-    def effective_api_key(cls) -> str:
+-        return cls.OLLAMA_API_KEY if cls.LLM_PROVIDER == "ollama" else cls.API_KEY
+-
+-    PROMPT_MSG_CONTINUATION = PROMPT_MSG_CONTINUATION
+-    PROMPT_DIALOG_EXTRACT = PROMPT_DIALOG_EXTRACT
+-    PROMPT_DIALOG_CLASSIFICATION = PROMPT_DIALOG_CLASSIFICATION
+-    PROMPT_DIALOG_EXTRACT_MERGED = PROMPT_DIALOG_EXTRACT_MERGED
+-    PROMPT_TRACE_EVENT_FILTER = """You are a narrative coherence analyzer for constructing and maintaining event memory chains. Your task is to filter events from a new event list (Event List B) that are directly related to an existing event chain (Event Chain A).
+-
++    def effective_api_key(cls) -> str:
++        return cls.OLLAMA_API_KEY if cls.LLM_PROVIDER == "ollama" else cls.API_KEY
++
++    PROMPT_MSG_CONTINUATION = PROMPT_MSG_CONTINUATION
++    PROMPT_DIALOG_EXTRACT = PROMPT_DIALOG_EXTRACT
++    PROMPT_DIALOG_EXTRACT_LOCAL_TEMPORAL = PROMPT_DIALOG_EXTRACT_LOCAL_TEMPORAL
++    PROMPT_DIALOG_CLASSIFICATION = PROMPT_DIALOG_CLASSIFICATION
++    PROMPT_DIALOG_EXTRACT_MERGED = PROMPT_DIALOG_EXTRACT_MERGED
++    PROMPT_TRACE_EVENT_FILTER = """You are a narrative coherence analyzer for constructing and maintaining event memory chains. Your task is to filter events from a new event list (Event List B) that are directly related to an existing event chain (Event Chain A).
++
+ **Core Task:**
+ Event Chain A represents an existing sequence of events (could be one or multiple events). Event List B is a set of newly observed events. Analyze each event in B to determine whether it should:
+ 1. Serve as a **direct continuation** of Event Chain A (directly related to A's core narrative)
+@@ -979,33 +1002,222 @@ class EmbeddingStore:
+         os.makedirs(os.path.dirname(self.path), exist_ok=True)
+         with open(self.path, "w") as f:
+             json.dump(self.data, f)
+-        self.dirty = False
+-
+-
+-class LLMWorker:
+-    def __init__(self):
+-        self.provider = (Config.LLM_PROVIDER or "openai").strip().lower()
+-        self.base_url = Config.effective_base_url()
++        self.dirty = False
++
++
++class LLMWorker:
++    def __init__(self):
++        self.provider = (Config.LLM_PROVIDER or "openai").strip().lower()
++        self.base_url = Config.effective_base_url()
+         self.api_key = Config.effective_api_key()
+-        self.chat_model = Config.effective_llm_model()
+-        self.embedding_model = Config.effective_embedding_model()
+-        self.embedding_fallback_dims = 1536
+-        self.ollama_num_ctx = getattr(Config, "OLLAMA_NUM_CTX", None)
+-        self.ollama_num_predict = getattr(Config, "OLLAMA_NUM_PREDICT", None)
+-
+-        self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
+-        try:
+-            self.encoding = tiktoken.encoding_for_model(self.chat_model)
+-        except Exception:
+-            self.encoding = tiktoken.get_encoding("cl100k_base")
+-
+-    def count_tokens(self, text: str) -> int:
+-        return len(self.encoding.encode(text or ""))
+-
+-    def _create_chat_completion(self, *, messages: List[Dict[str, str]], json_mode: bool = False, timeout: float | None = None):
+-        kwargs: Dict[str, Any] = {
+-            "model": self.chat_model,
+-            "messages": messages,
++        self.chat_model = Config.effective_llm_model()
++        self.embedding_model = Config.effective_embedding_model()
++        self.embedding_fallback_dims = 1536
++        self.ollama_num_ctx = getattr(Config, "OLLAMA_NUM_CTX", None)
++        self.ollama_num_predict = getattr(Config, "OLLAMA_NUM_PREDICT", None)
++        self._construction_call_index = 0
++        self._construction_question_id = None
++        self._construction_session_id = None
++        self._construction_block_id = None
++        self._last_api_retry_index = 0
++        self._temporal_gate_on = None
++        self._temporal_gate_reason = None
++        self._temporal_tool_called = False
++        self._pass1_tool_followup = False
++
++        self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
++        try:
++            self.encoding = tiktoken.encoding_for_model(self.chat_model)
++        except Exception:
++            self.encoding = tiktoken.get_encoding("cl100k_base")
++
++    def count_tokens(self, text: str) -> int:
++        return len(self.encoding.encode(text or ""))
++
++    @staticmethod
++    def _construction_stage(note: str, extra: Dict[str, Any] | None, followup: bool = False) -> str | None:
++        note_s = str(note or "")
++        if extra and extra.get("stage") not in (None, "build"):
++            return None
++        if "Overhead_Split" in note_s:
++            stage = "split_check"
++        elif "NotePS1_Extract" in note_s:
++            stage = "pass1_extract"
++        elif "NotePS2_Classify" in note_s:
++            stage = "pass2_classify"
++        elif "NotePS_Merged" in note_s:
++            stage = "merged_extract"
++        elif extra and extra.get("stage") == "build":
++            stage = "construction_other"
++        else:
++            return None
++        if followup:
++            if stage == "pass1_extract" and extra:
++                override = extra.get("followup_stage_override")
++                if override:
++                    return str(override)
++            return "pass1_tool_followup" if stage == "pass1_extract" else f"{stage}_tool_followup"
++        return stage
++
++    def _log_construction_call(
++        self,
++        *,
++        note: str,
++        extra: Dict[str, Any] | None,
++        stage: str | None,
++        response: Any = None,
++        latency_sec: float = 0.0,
++        success: bool,
++        retry_index: int = 0,
++        error: Exception | None = None,
++    ) -> None:
++        path = getattr(Config, "CONSTRUCTION_CALLS_FILE", "")
++        if not path or not stage:
++            return
++        usage = getattr(response, "usage", None) if response is not None else None
++
++        def _usage_value(name: str):
++            value = getattr(usage, name, None) if usage is not None else None
++            return int(value) if value is not None else None
++
++        prompt_tokens = _usage_value("prompt_tokens")
++        completion_tokens = _usage_value("completion_tokens")
++        total_tokens = _usage_value("total_tokens")
++        cached_tokens = None
++        prompt_details = getattr(usage, "prompt_tokens_details", None) if usage is not None else None
++        if prompt_details is not None:
++            cached_tokens = getattr(prompt_details, "cached_tokens", None)
++            if cached_tokens is not None:
++                cached_tokens = int(cached_tokens)
++        self._construction_call_index += 1
++        row = {
++            "system": "samem",
++            "question_id": self._construction_question_id,
++            "user_id": getattr(self, "_construction_user_id", None),
++            "session_id": self._construction_session_id,
++            "block_id": self._construction_block_id,
++            "stage": stage,
++            "call_index": self._construction_call_index,
++            "model": self.chat_model,
++            "prompt_tokens": prompt_tokens,
++            "completion_tokens": completion_tokens,
++            "total_tokens": total_tokens,
++            "cached_tokens": cached_tokens,
++            "latency_sec": round(float(latency_sec), 6),
++            "success": bool(success),
++            "retry_index": int(retry_index),
++            "provider_usage_available": bool(usage is not None and prompt_tokens is not None and completion_tokens is not None),
++        }
++        if error is not None:
++            row["error_type"] = type(error).__name__
++        os.makedirs(os.path.dirname(path), exist_ok=True)
++        with open(path, "a", encoding="utf-8") as handle:
++            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
++
++    def _log_local_construction_stage(
++        self,
++        *,
++        success: bool,
++        latency_sec: float = 0.0,
++        metadata: Dict[str, Any] | None = None,
++        error: Exception | None = None,
++    ) -> None:
++        """Record deterministic temporal resolution without pretending it used LLM tokens."""
++        path = getattr(Config, "CONSTRUCTION_CALLS_FILE", "")
++        if not path:
++            return
++        self._construction_call_index += 1
++        row = {
++            "system": "samem",
++            "question_id": self._construction_question_id,
++            "user_id": getattr(self, "_construction_user_id", None),
++            "session_id": self._construction_session_id,
++            "block_id": self._construction_block_id,
++            "stage": "temporal_local_resolve",
++            "call_index": self._construction_call_index,
++            "model": "local-temporal-resolver",
++            "prompt_tokens": 0,
++            "completion_tokens": 0,
++            "total_tokens": 0,
++            "cached_tokens": None,
++            "latency_sec": round(float(latency_sec), 6),
++            "success": bool(success),
++            "retry_index": 0,
++            "provider_usage_available": False,
++            "usage_source": "local_no_llm",
++        }
++        if metadata:
++            row.update(metadata)
++        if error is not None:
++            row["error_type"] = type(error).__name__
++            row["error"] = str(error)[:300]
++        os.makedirs(os.path.dirname(path), exist_ok=True)
++        with open(path, "a", encoding="utf-8") as handle:
++            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
++
++    def _log_temporal_gate(
++        self,
++        *,
++        gate_on: bool,
++        reason: str,
++        temporal_tool_called: bool,
++        pass1_tool_followup: bool,
++    ) -> None:
++        """Persist one zero-token B2 gate decision per constructed block."""
++        path = getattr(Config, "TEMPORAL_GATE_LOG_FILE", "")
++        if not path:
++            return
++        row = {
++            "system": "samem",
++            "question_id": self._construction_question_id,
++            "user_id": getattr(self, "_construction_user_id", None),
++            "session_id": self._construction_session_id,
++            "block_id": self._construction_block_id,
++            "stage": "temporal_gate",
++            "temporal_gate_on": bool(gate_on),
++            "temporal_gate_reason": str(reason),
++            "temporal_tool_called": bool(temporal_tool_called),
++            "pass1_tool_followup": bool(pass1_tool_followup),
++            "provider_usage_available": False,
++            "usage_source": "local_gate_no_llm",
++        }
++        os.makedirs(os.path.dirname(path), exist_ok=True)
++        with open(path, "a", encoding="utf-8") as handle:
++            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
++
++    @staticmethod
++    def _is_transient_error(error: Exception) -> bool:
++        status = getattr(error, "status_code", None)
++        if status is not None:
++            try:
++                return int(status) == 429 or int(status) >= 500
++            except (TypeError, ValueError):
++                pass
++        name = type(error).__name__.lower()
++        return any(token in name for token in ("timeout", "connection", "ratelimit", "apitimeout"))
++
++    def _chat_with_retries(self, kwargs: Dict[str, Any]):
++        self._last_api_retry_index = 0
++        for retry_index in range(int(getattr(Config, "API_MAX_RETRIES", 5)) + 1):
++            try:
++                response = self.client.chat.completions.create(**kwargs)
++                self._last_api_retry_index = retry_index
++                return response
++            except Exception as error:
++                if retry_index >= int(getattr(Config, "API_MAX_RETRIES", 5)) or not self._is_transient_error(error):
++                    raise
++                delay = min(30.0, float(getattr(Config, "API_RETRY_BACKOFF_BASE", 0.5)) * (2 ** retry_index))
++                logger.warning(
++                    "Transient LLM failure (%s), retry %d/%d after %.1fs",
++                    type(error).__name__, retry_index + 1,
++                    int(getattr(Config, "API_MAX_RETRIES", 5)), delay,
++                )
++                time.sleep(delay)
++
++    def _create_chat_completion(self, *, messages: List[Dict[str, str]], json_mode: bool = False, timeout: float | None = None):
++        kwargs: Dict[str, Any] = {
++            "model": self.chat_model,
++            "messages": messages,
+             "temperature": 0.0,
+         }
+         if timeout is not None:
+@@ -1019,19 +1231,19 @@ class LLMWorker:
+                 options["num_ctx"] = int(self.ollama_num_ctx)
+             if self.ollama_num_predict is not None:
+                 options["num_predict"] = int(self.ollama_num_predict)
+-            if options:
+-                kwargs["extra_body"] = {"options": options}
+-
+-        try:
+-            return self.client.chat.completions.create(**kwargs)
+-        except Exception:
+-            if json_mode:
+-                kwargs.pop("response_format", None)
+-                return self.client.chat.completions.create(**kwargs)
+-            raise
+-
+-    def get_embedding(self, text, note="Emb"):
+-        try:
++            if options:
++                kwargs["extra_body"] = {"options": options}
++
++        try:
++            return self._chat_with_retries(kwargs)
++        except Exception:
++            if json_mode:
++                kwargs.pop("response_format", None)
++                return self._chat_with_retries(kwargs)
++            raise
++
++    def get_embedding(self, text, note="Emb"):
++        try:
+             if not text:
+                 return [0.0] * self.embedding_fallback_dims
+             resp = self.client.embeddings.create(
+@@ -1043,25 +1255,34 @@ class LLMWorker:
+             except Exception:
+                 emb = None
+             return emb if emb is not None else [0.0] * self.embedding_fallback_dims
+-        except Exception:
+-            return [0.0] * self.embedding_fallback_dims
+-
+-    def chat_completion(self, prompt, note="Completion", json_mode=False, extra=None, enable_functions=False):
+-        """
+-        Call LLM with optional function calling support.
+-
++        except Exception:
++            return [0.0] * self.embedding_fallback_dims
++
++    def chat_completion(
++        self,
++        prompt,
++        note="Completion",
++        json_mode=False,
++        extra=None,
++        enable_functions=False,
++        tool_choice_override=None,
++    ):
++        """
++        Call LLM with optional function calling support.
++
+         Args:
+             prompt: The prompt text
+             note: Note for token logging
+             json_mode: Whether to use JSON response format
+-            extra: Extra metadata for logging
+-            enable_functions: Whether to enable temporal resolution function calling
+-        """
+-        try:
+-            messages = [{"role": "user", "content": prompt}]
+-
+-            # Add function calling support for temporal resolution
+-            kwargs = {
++            extra: Extra metadata for logging
++            enable_functions: Whether to enable temporal resolution function calling
++        """
++        construction_stage = self._construction_stage(note, extra)
++        try:
++            messages = [{"role": "user", "content": prompt}]
++
++            # Add function calling support for temporal resolution
++            kwargs = {
+                 "model": self.chat_model,
+                 "messages": messages,
+                 "temperature": 0.0,
+@@ -1076,24 +1297,35 @@ class LLMWorker:
+                     options["num_ctx"] = int(self.ollama_num_ctx)
+                 if self.ollama_num_predict is not None:
+                     options["num_predict"] = int(self.ollama_num_predict)
+-                if options:
+-                    kwargs["extra_body"] = {"options": options}
+-
+-            if enable_functions:
+-                kwargs["tools"] = [{
+-                    "type": "function",
+-                    "function": TEMPORAL_RESOLUTION_FUNCTION_SCHEMA
+-                }]
+-                kwargs["tool_choice"] = "auto"
+-
+-            resp = self.client.chat.completions.create(**kwargs)
+-
+-            # Handle function calling
+-            if enable_functions and resp.choices[0].message.tool_calls:
+-                # Execute function calls
+-                tool_calls = resp.choices[0].message.tool_calls
+-                messages.append(resp.choices[0].message)
+-
++                if options:
++                    kwargs["extra_body"] = {"options": options}
++
++            if enable_functions:
++                kwargs["tools"] = [{
++                    "type": "function",
++                    "function": TEMPORAL_RESOLUTION_FUNCTION_SCHEMA
++                }]
++                kwargs["tool_choice"] = tool_choice_override or "auto"
++
++            call_start = time.perf_counter()
++            resp = self._chat_with_retries(kwargs)
++            self._log_construction_call(
++                note=note,
++                extra=extra,
++                stage=construction_stage,
++                response=resp,
++                latency_sec=time.perf_counter() - call_start,
++                success=True,
++                retry_index=self._last_api_retry_index,
++            )
++
++            # Handle function calling
++            if enable_functions and resp.choices[0].message.tool_calls:
++                self._temporal_tool_called = True
++                # Execute function calls
++                tool_calls = resp.choices[0].message.tool_calls
++                messages.append(resp.choices[0].message)
++
+                 for tool_call in tool_calls:
+                     if tool_call.function.name == "resolve_temporal_expression":
+                         args = json.loads(tool_call.function.arguments)
+@@ -1105,24 +1337,44 @@ class LLMWorker:
+                             "role": "tool",
+                             "tool_call_id": tool_call.id,
+                             "content": json.dumps(result)
+-                        })
+-
+-                # Get final response after function execution
+-                kwargs["messages"] = messages
+-                kwargs.pop("tools", None)
+-                kwargs.pop("tool_choice", None)
+-                resp = self.client.chat.completions.create(**kwargs)
+-
+-            extra_payload = {"prompt_tokens_est": self.count_tokens(prompt)}
+-            if extra:
+-                extra_payload.update(extra)
+-            TokenAnalyzer.log_usage(resp.usage, note, extra_payload)
+-            return resp.choices[0].message.content.strip()
+-        except Exception as e:
+-            logger.warning(f"LLM call failed: {e}")
+-            return "{}" if json_mode else ""
+-
+-    def check_relation(self, text_prev_list, text_curr, note="Relation"):
++                        })
++
++                # Get final response after function execution
++                kwargs["messages"] = messages
++                kwargs.pop("tools", None)
++                kwargs.pop("tool_choice", None)
++                self._pass1_tool_followup = True
++                followup_start = time.perf_counter()
++                resp = self._chat_with_retries(kwargs)
++                self._log_construction_call(
++                    note=note,
++                    extra=extra,
++                    stage=self._construction_stage(note, extra, followup=True),
++                    response=resp,
++                    latency_sec=time.perf_counter() - followup_start,
++                    success=True,
++                    retry_index=self._last_api_retry_index,
++                )
++
++            extra_payload = {"prompt_tokens_est": self.count_tokens(prompt)}
++            if extra:
++                extra_payload.update(extra)
++            TokenAnalyzer.log_usage(resp.usage, note, extra_payload)
++            return resp.choices[0].message.content.strip()
++        except Exception as e:
++            self._log_construction_call(
++                note=note,
++                extra=extra,
++                stage=construction_stage,
++                latency_sec=0.0,
++                success=False,
++                retry_index=self._last_api_retry_index,
++                error=e,
++            )
++            logger.warning(f"LLM call failed: {e}")
++            return "{}" if json_mode else ""
++
++    def check_relation(self, text_prev_list, text_curr, note="Relation"):
+         ref_text = "\n".join(text_prev_list)
+         prompt = Config.PROMPT_MSG_CONTINUATION.format(ref=ref_text, curr=text_curr)
+         res = self.chat_completion(prompt, note=note, extra={"prompt_tokens_est": self.count_tokens(prompt), "stage": "build"})
